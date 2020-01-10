@@ -1,0 +1,7 @@
+{
+    "name": "HIDTest",
+    "author": "burtoogle",
+    "version": "1.0",
+    "description": "Test access to HID devices.",
+    "api": "7.0"
+}

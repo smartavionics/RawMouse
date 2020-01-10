@@ -1,0 +1,30 @@
+
+{
+  "devices" : [
+    [ "0x046d", "0xc603", "spacemouse", "3Dconnexion Spacemouse Plus XT" ],
+    [ "0x046d", "0xc605", "spacemouse", "3Dconnexion CADman" ],
+    [ "0x046d", "0xc606", "spacemouse", "3Dconnexion Spacemouse Classic" ],
+    [ "0x046d", "0xc621", "spacemouse", "3Dconnexion Spaceball 5000" ],
+    [ "0x046d", "0xc623", "spacemouse", "3Dconnexion Space Traveller 3D Mouse" ],
+    [ "0x046d", "0xc625", "spacemouse", "3Dconnexion Space Pilot 3D Mouse" ],
+    [ "0x046d", "0xc626", "spacemouse", "3Dconnexion Space Navigator 3D Mouse" ],
+    [ "0x046d", "0xc627", "spacemouse", "3Dconnexion Space Explorer 3D Mouse" ],
+    [ "0x046d", "0xc628", "spacemouse", "3Dconnexion Space Navigator for Notebooks" ],
+    [ "0x046d", "0xc629", "spacemouse", "3Dconnexion SpacePilot Pro 3D Mouse" ],
+    [ "0x046d", "0xc62b", "spacemouse", "3Dconnexion Space Mouse Pro" ],
+    [ "0x256f", "0xc62e", "spacemouse", "3Dconnexion Space Mouse Wireless (cabled)" ],
+    [ "0x256f", "0xc62f", "spacemouse", "3Dconnexion Space Mouse Wireless" ],
+    [ "0x256f", "0xc631", "spacemouse", "3Dconnexion Space Mouse Pro Wireless (cabled)" ],
+    [ "0x256f", "0xc632", "spacemouse", "3Dconnexion Space Mouse Pro Wireless" ],
+    [ "0x256f", "0xc635", "spacemouse", "3Dconnexion Space Mouse Compact" ]
+  ],
+  "profiles" : [
+    {
+      "name" : "spacemouse",
+      "axes" : [
+      ],
+      "buttons" : [
+      ]
+    }
+  ]
+}
