@@ -7,6 +7,7 @@ import os
 
 from threading import Thread
 
+from UM.Event import MouseEvent, WheelEvent
 from UM.Extension import Extension
 from UM.Logger import Logger
 
@@ -29,8 +30,8 @@ class HIDMouse(Extension, QObject,):
         QObject.__init__(self, parent)
         Extension.__init__(self)
 
-        self._application = CuraApplication.getInstance()
-        self._camera_tool = self._application.getController().getCameraTool()
+        self._application = None
+        self._camera_tool = None
 
         self.setMenuName(catalog.i18nc("@item:inmenu", "HIDMouse"))
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Reload"), self._reload)
@@ -92,6 +93,10 @@ class HIDMouse(Extension, QObject,):
             while self._running:
                 d = h.read(64, 1000)
                 if d:
+                    if self._application is None:
+                        self._application = CuraApplication.getInstance()
+                    elif self._camera_tool is None:
+                        self._camera_tool = self._application.getController().getCameraTool()
                     self._decodeHIDEvent(d)
 
             h.close()
@@ -103,6 +108,8 @@ class HIDMouse(Extension, QObject,):
     def _decodeHIDEvent(self, buf):
         if self._hid_profile_name == "spacemouse":
             self._decodeSpacemouseEvent(buf)
+        elif self._hid_profile_name == "tiltpad":
+            self._decodeTiltpadEvent(buf)
         else:
             Logger.log("d", "Unknown HID event: profile = %s, code = %x, len = %d", self._hid_profile_name, buf[0], len(buf))
 
@@ -137,8 +144,36 @@ class HIDMouse(Extension, QObject,):
             Logger.log("d", "Unknown spacemouse event: code = %x, len = %d", buf[0], len(buf))
 
     def _spacemouseAxisEvent(self, axis, val):
-        Logger.log("d", "axis[%d] = %f", axis, val)
+        Logger.log("d", "%s = %f", self._hid_profile["axes"][axis]["name"], val)
 
     def _spacemouseButtonEvent(self, button, val):
         Logger.log("d", "button[%d] = %f", button, val)
 
+    def _decodeTiltpadEvent(self, buf):
+        if (buf[3] & 0x80) == 0x80: #tilt
+            if self._camera_tool is not None:
+                x = (buf[0] - 127) * 0.001
+                y = (buf[1] - 127) * 0.001
+                if abs(x) > 0.01 or abs(y) > 0.01:
+                    self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, x, y, 0, 0))
+        buttons = buf[3] & 0x7f
+        if buttons == 1: #red
+            if self._camera_tool is not None:
+                self._camera_tool._rotateCamera(0.01, 0)
+        elif buttons == 4: #green
+            if self._camera_tool is not None:
+                self._camera_tool._rotateCamera(-0.01, 0)
+        elif buttons == 8: #blue
+            if self._camera_tool is not None:
+                self._camera_tool._rotateCamera(0, 0.01)
+        elif buttons == 2: #orange
+            if self._camera_tool is not None:
+                self._camera_tool._rotateCamera(0, -0.01)
+        elif buttons == 0x10: #left fire
+            if self._camera_tool is not None:
+                self._camera_tool._zoomCamera(-100)
+        elif buttons == 0x20: #right fire
+            if self._camera_tool is not None:
+                self._camera_tool._zoomCamera(100)
+        elif buttons != 0:
+            Logger.log("d", "Unkown tiltpad event: [0] = %x, [1] = %x, [2] = %x, [3] = %x", buf[0], buf[1], buf[2], buf[3])
