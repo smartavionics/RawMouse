@@ -20,13 +20,18 @@
 
     [ "0x047d", "0x4008", "tiltpad", "Kensington Gravis Destroyer TiltPad" ]
   ],
-  "profiles" : [
-    {
-      "name" : "spacemouse",
+  "profiles" : {
+    "spacemouse" : {
       "axes" : [
+        { "name": "x",     "offset": 0.0, "scale": 1.0, "threshold": 0.01 },
+        { "name": "y",     "offset": 0.0, "scale": 1.0, "threshold": 0.01 },
+        { "name": "z",     "offset": 0.0, "scale": 1.0, "threshold": 0.01 },
+        { "name": "roll",  "offset": 0.0, "scale": 1.0, "threshold": 0.01 },
+        { "name": "pitch", "offset": 0.0, "scale": 1.0, "threshold": 0.01 },
+        { "name": "yaw",   "offset": 0.0, "scale": 1.0, "threshold": 0.01 }
       ],
       "buttons" : [
       ]
     }
-  ]
+  }
 }

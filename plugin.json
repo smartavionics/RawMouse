@@ -1,7 +1,7 @@
 {
-    "name": "HIDTest",
+    "name": "HIDMouse",
     "author": "burtoogle",
     "version": "1.0",
-    "description": "Test access to HID devices.",
+    "description": "Simple HID mouse interface.",
     "api": "7.0"
 }
