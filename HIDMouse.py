@@ -34,13 +34,16 @@ class HIDMouse(Extension, QObject,):
         QObject.__init__(self, parent)
         Extension.__init__(self)
 
+        self._decoders = {
+            "spacemouse": self._decodeSpacemouseEvent,
+            "tiltpad": self._decodeTiltpadEvent
+        }
+
         self._application = None
         self._camera_tool = None
 
         self.setMenuName(catalog.i18nc("@item:inmenu", "HIDMouse"))
-        self.addMenuItem(catalog.i18nc("@item:inmenu", "Reload"), self._reload)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Restart"), self._restart)
-        self.addMenuItem(catalog.i18nc("@item:inmenu", "Stop"), self._stop)
 
         self._buttons = 0
         self._running = False
@@ -63,6 +66,10 @@ class HIDMouse(Extension, QObject,):
         self._axis_offset = []
         self._axis_target = []
         self._axis_value = []
+        if self._hid_profile_name in self._decoders:
+            self._decoder = self._decoders[self._hid_profile_name]
+        else:
+            self._decoder = self._decodeUnknownEvent
         hid_profile_axes = self._hid_profile["axes"]
         for i in range(0, len(hid_profile_axes)):
             axis_vals = hid_profile_axes[i]
@@ -78,6 +85,7 @@ class HIDMouse(Extension, QObject,):
 
     def _restart(self):
         self._stop()
+        self._reload()
         self._start()
 
     def _start(self):
@@ -131,10 +139,7 @@ class HIDMouse(Extension, QObject,):
                     d = h.read(64, 1000)
                     if d and self._last_event_at.elapsed() > 50:
                         self._last_event_at.start()
-                        if self._hid_profile_name == "spacemouse":
-                            self._decodeSpacemouseEvent(d)
-                        elif self._hid_profile_name == "tiltpad":
-                            self._decodeTiltpadEvent(d)
+                        self._decoder(d)
                 else:
                     time.sleep(1.0)
             h.close()
@@ -145,22 +150,20 @@ class HIDMouse(Extension, QObject,):
 
     def _decodeSpacemouseEvent(self, buf):
         if len(buf) == 7 and (buf[0] == 1 or buf[0] == 2):
-            old_vals = self._axis_value.copy()
             for a in range(0, 3):
                 val = buf[2 * a + 1] | buf[2 * a + 2] << 8
                 if val & 0x8000:
                     val = val - 0x10000
                 axis = (buf[0] - 1) * 3 + a
                 self._axis_value[axis] = val / 350.0 * self._axis_scale[axis] + self._axis_offset[axis]
-            self._spacemouseAxisEvent(old_vals, self._axis_value)
+            self._spacemouseAxisEvent(self._axis_value)
         elif len(buf) == 13 and buf[0] == 1:
-            old_vals = self._axis_value.copy()
             for a in range(0, 6):
                 val = buf[2 * a + 1] | buf[2 * a + 2] << 8
                 if val & 0x8000:
                     val = val - 0x10000
                 self._axis_value[a] = val / 350.0 * self._axis_scale[a] + self._axis_offset[a]
-            self._spacemouseAxisEvent(old_vals, self._axis_value)
+            self._spacemouseAxisEvent(self._axis_value)
         elif len(buf) >= 3 and buf[0] == 3:
             buttons = buf[1] | buf[2] << 8
             for b in range(0, 16):
@@ -171,10 +174,10 @@ class HIDMouse(Extension, QObject,):
         else:
             Logger.log("d", "Unknown spacemouse event: code = %x, len = %d", buf[0], len(buf))
 
-    def _spacemouseAxisEvent(self, old_vals, vals):
+    def _spacemouseAxisEvent(self, vals):
         Logger.log("d", "Axes [%f,%f,%f,%f,%f,%f]", vals[0], vals[1], vals[2], vals[3], vals[4], vals[5])
         if self._camera_tool is not None:
-            changes = {
+            value = {
                 "movx": 0.0,
                 "movy": 0.0,
                 "rotx": 0.0,
@@ -182,14 +185,14 @@ class HIDMouse(Extension, QObject,):
                 "zoom": 0.0
             }
             for i in range(0, 5):
-                if abs(vals[i] - old_vals[i]) > self._axis_threshold[i]:
-                    changes[self._axis_target[i]] = vals[i]
-            if changes["movx"] != 0 or changes["movy"] != 0:
-                self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, changes["movx"], changes["movy"], 0, 0))
-            if changes["rotx"] != 0 or changes["roty"] != 0:
-                self._camera_tool._rotateCamera(changes["rotx"], changes["roty"])
-            if changes["zoom"] != 0:
-                self._camera_tool._zoomCamera(changes["zoom"])
+                if abs(vals[i]) > self._axis_threshold[i]:
+                    value[self._axis_target[i]] = vals[i]
+            if value["movx"] != 0.0 or value["movy"] != 0.0:
+                self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, value["movx"], value["movy"], 0, 0))
+            if value["rotx"] != 0 or value["roty"] != 0:
+                self._camera_tool._rotateCamera(value["rotx"], value["roty"])
+            if value["zoom"] != 0:
+                self._camera_tool._zoomCamera(value["zoom"])
 
     def _spacemouseButtonEvent(self, button, val):
         Logger.log("d", "button[%d] = %f", button, val)
@@ -221,4 +224,7 @@ class HIDMouse(Extension, QObject,):
             if self._camera_tool is not None:
                 self._camera_tool._zoomCamera(100)
         elif buttons != 0:
-            Logger.log("d", "Unkown tiltpad event: [0] = %x, [1] = %x, [2] = %x, [3] = %x", buf[0], buf[1], buf[2], buf[3])
+            Logger.log("d", "Unknown tiltpad event: [0] = %x, [1] = %x, [2] = %x, [3] = %x", buf[0], buf[1], buf[2], buf[3])
+
+    def _decodeUnknownEvent(self, buf):
+        Logger.log("d", "Unknown event: len = %d [0] = %x", len(buf), buf[0])
