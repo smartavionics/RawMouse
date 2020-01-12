@@ -23,17 +23,21 @@
   "profiles" : {
     "spacemouse" : {
       "axes" : [
-        { "name": "x",     "offset": 0.0, "scale": 1.0, "threshold": 0.01 },
-        { "name": "y",     "offset": 0.0, "scale": 1.0, "threshold": 0.01 },
-        { "name": "z",     "offset": 0.0, "scale": 1.0, "threshold": 0.01 },
-        { "name": "roll",  "offset": 0.0, "scale": 1.0, "threshold": 0.01 },
-        { "name": "pitch", "offset": 0.0, "scale": 1.0, "threshold": 0.01 },
-        { "name": "yaw",   "offset": 0.0, "scale": 1.0, "threshold": 0.01 }
+        { "name": "x",     "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "movx" },
+        { "name": "y",     "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "zoom" },
+        { "name": "z",     "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "movy" },
+        { "name": "roll",  "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "none" },
+        { "name": "pitch", "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "roty" },
+        { "name": "yaw",   "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "rotx" }
       ],
       "buttons" : [
       ]
     },
     "tiltpad" : {
+      "axes" : [
+        { "name": "tilt-x", "offset": 0.0, "scale": -0.001, "threshold": 0.01 },
+        { "name": "tilt-y", "offset": 0.0, "scale": -0.001, "threshold": 0.01 }
+      ]
     }
   }
 }

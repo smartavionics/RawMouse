@@ -3,6 +3,7 @@
 
 import json
 import sys
+import time
 import os
 
 from threading import Thread
@@ -13,7 +14,8 @@ from UM.Logger import Logger
 
 from cura.CuraApplication import CuraApplication
 
-from PyQt5.QtCore import QObject
+from PyQt5.QtCore import QObject, QTime
+from PyQt5 import QtCore, QtWidgets
 
 from UM.i18n import i18nCatalog
 catalog = i18nCatalog("cura")
@@ -22,6 +24,8 @@ if sys.platform == "linux":
     sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hidapi", "hidapi-0.9.0-py3.5-linux-" + os.uname()[4] + ".egg"))
 elif sys.platform == "win32":
     sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hidapi", "hidapi-0.9.0-py3.5-win-amd64.egg"))
+elif sys.platform == "darwin":
+    sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hidapi", "hidapi-0.9.0-py3.5-macosx-10.13-intel.egg"))
 import hid
 del sys.path[-1]
 
@@ -45,8 +49,32 @@ class HIDMouse(Extension, QObject,):
         self._start()
 
     def _reload(self):
-        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hidmouse.json"), "r", encoding = "utf-8") as f:
-            self._config = json.load(f)
+        try:
+            with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hidmouse.json"), "r", encoding = "utf-8") as f:
+                self._config = json.load(f)
+        except Exception as e:
+            Logger.log("e", "Exception loading configuration: %s", e)
+
+    def _cacheProfileValues(self, profile_name):
+        self._hid_profile_name = profile_name
+        self._hid_profile = self._config["profiles"][profile_name]
+        self._axis_threshold = []
+        self._axis_scale = []
+        self._axis_offset = []
+        self._axis_target = []
+        self._axis_value = []
+        hid_profile_axes = self._hid_profile["axes"]
+        for i in range(0, len(hid_profile_axes)):
+            axis_vals = hid_profile_axes[i]
+            self._axis_threshold.append(axis_vals["threshold"])
+            self._axis_scale.append(axis_vals["scale"])
+            self._axis_offset.append(axis_vals["offset"])
+            if "target" in axis_vals:
+                self._axis_target.append(axis_vals["target"])
+            else:
+                self._axis_target.append("")
+            self._axis_value.append(0.0)
+            Logger.log("d", "%s: axis %d, scale = %f, threshold = %f, offset = %f, target = %s", self._hid_profile_name, i, self._axis_scale[i], self._axis_threshold[i], self._axis_offset[i], self._axis_target[i])
 
     def _restart(self):
         self._stop()
@@ -54,15 +82,17 @@ class HIDMouse(Extension, QObject,):
 
     def _start(self):
         self._hid_dev = None
-        for hid_dev in hid.enumerate():
-            for known_dev in self._config["devices"]:
-                if hid_dev["vendor_id"] == int(known_dev[0], base = 16) and hid_dev["product_id"] == int(known_dev[1], base = 16):
-                    self._hid_dev = hid_dev
-                    self._hid_profile_name = known_dev[2]
-                    self._hid_profile = self._config["profiles"][self._hid_profile_name]
+        try:
+            for hid_dev in hid.enumerate():
+                for known_dev in self._config["devices"]:
+                    if hid_dev["vendor_id"] == int(known_dev[0], base = 16) and hid_dev["product_id"] == int(known_dev[1], base = 16):
+                        self._hid_dev = hid_dev
+                        self._cacheProfileValues(known_dev[2])
+                        break
+                if self._hid_dev is not None:
                     break
-            if self._hid_dev is not None:
-                break
+        except Exception as e:
+            Logger.log("e", "Exception initialising profile: %s", e)
 
         if self._hid_dev is not None:
             self._runner = Thread(target = self._run, daemon = True, name = "HID Event Reader")
@@ -80,7 +110,7 @@ class HIDMouse(Extension, QObject,):
         try:
             h = hid.device()
             if self._hid_dev["path"]:
-                Logger.log("d", "Trying to open %s", self._hid_dev["path"])
+                Logger.log("d", "Trying to open %s", self._hid_dev["path"].decode("utf-8"))
                 h.open_path(self._hid_dev["path"])
             else:
                 Logger.log("d", "Trying to open [%x,%x]", self._hid_dev["vendor_id"], self._hid_dev["product_id"])
@@ -90,49 +120,47 @@ class HIDMouse(Extension, QObject,):
             Logger.log("i", "Product: %s", h.get_product_string())
             #Logger.log("i", "Serial No: %s", h.get_serial_number_string())
 
+            self._last_event_at = QTime()
+            self._last_event_at.start()
             while self._running:
-                d = h.read(64, 1000)
-                if d:
-                    if self._application is None:
-                        self._application = CuraApplication.getInstance()
-                    elif self._camera_tool is None:
-                        self._camera_tool = self._application.getController().getCameraTool()
-                    self._decodeHIDEvent(d)
-
+                if self._application is None:
+                    self._application = CuraApplication.getInstance()
+                elif self._camera_tool is None:
+                    self._camera_tool = self._application.getController().getCameraTool()
+                if self._application is not None and not self._application.checkWindowMinimizedState():
+                    d = h.read(64, 1000)
+                    if d and self._last_event_at.elapsed() > 50:
+                        self._last_event_at.start()
+                        if self._hid_profile_name == "spacemouse":
+                            self._decodeSpacemouseEvent(d)
+                        elif self._hid_profile_name == "tiltpad":
+                            self._decodeTiltpadEvent(d)
+                else:
+                    time.sleep(1.0)
             h.close()
         except Exception as e:
-            Logger.log("e", "Exception while reading HID events: %s" % e)
+            Logger.log("e", "Exception while reading HID events: %s", e)
         self._running = False
         self._runner = None
 
-    def _decodeHIDEvent(self, buf):
-        if self._hid_profile_name == "spacemouse":
-            self._decodeSpacemouseEvent(buf)
-        elif self._hid_profile_name == "tiltpad":
-            self._decodeTiltpadEvent(buf)
-        else:
-            Logger.log("d", "Unknown HID event: profile = %s, code = %x, len = %d", self._hid_profile_name, buf[0], len(buf))
-
     def _decodeSpacemouseEvent(self, buf):
         if len(buf) == 7 and (buf[0] == 1 or buf[0] == 2):
-            hid_profile_axes = self._hid_profile["axes"]
+            old_vals = self._axis_value.copy()
             for a in range(0, 3):
                 val = buf[2 * a + 1] | buf[2 * a + 2] << 8
                 if val & 0x8000:
                     val = val - 0x10000
                 axis = (buf[0] - 1) * 3 + a
-                axis_config = hid_profile_axes[axis]
-                val = val / 350.0 * axis_config["scale"] + axis_config["offset"]
-                self._spacemouseAxisEvent(axis, val)
+                self._axis_value[axis] = val / 350.0 * self._axis_scale[axis] + self._axis_offset[axis]
+            self._spacemouseAxisEvent(old_vals, self._axis_value)
         elif len(buf) == 13 and buf[0] == 1:
-            hid_profile_axes = self._hid_profile["axes"]
+            old_vals = self._axis_value.copy()
             for a in range(0, 6):
                 val = buf[2 * a + 1] | buf[2 * a + 2] << 8
                 if val & 0x8000:
                     val = val - 0x10000
-                axis_config = hid_profile_axes[a]
-                val = val / 350.0 * axis_config["scale"] + axis_config["offset"]
-                self._spacemouseAxisEvent(a, val)
+                self._axis_value[a] = val / 350.0 * self._axis_scale[a] + self._axis_offset[a]
+            self._spacemouseAxisEvent(old_vals, self._axis_value)
         elif len(buf) >= 3 and buf[0] == 3:
             buttons = buf[1] | buf[2] << 8
             for b in range(0, 16):
@@ -143,19 +171,36 @@ class HIDMouse(Extension, QObject,):
         else:
             Logger.log("d", "Unknown spacemouse event: code = %x, len = %d", buf[0], len(buf))
 
-    def _spacemouseAxisEvent(self, axis, val):
-        Logger.log("d", "%s = %f", self._hid_profile["axes"][axis]["name"], val)
+    def _spacemouseAxisEvent(self, old_vals, vals):
+        Logger.log("d", "Axes [%f,%f,%f,%f,%f,%f]", vals[0], vals[1], vals[2], vals[3], vals[4], vals[5])
+        if self._camera_tool is not None:
+            changes = {
+                "movx": 0.0,
+                "movy": 0.0,
+                "rotx": 0.0,
+                "roty": 0.0,
+                "zoom": 0.0
+            }
+            for i in range(0, 5):
+                if abs(vals[i] - old_vals[i]) > self._axis_threshold[i]:
+                    changes[self._axis_target[i]] = vals[i]
+            if changes["movx"] != 0 or changes["movy"] != 0:
+                self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, changes["movx"], changes["movy"], 0, 0))
+            if changes["rotx"] != 0 or changes["roty"] != 0:
+                self._camera_tool._rotateCamera(changes["rotx"], changes["roty"])
+            if changes["zoom"] != 0:
+                self._camera_tool._zoomCamera(changes["zoom"])
 
     def _spacemouseButtonEvent(self, button, val):
         Logger.log("d", "button[%d] = %f", button, val)
 
     def _decodeTiltpadEvent(self, buf):
-        if (buf[3] & 0x80) == 0x80: #tilt
-            if self._camera_tool is not None:
-                x = (buf[0] - 127) * 0.001
-                y = (buf[1] - 127) * 0.001
-                if abs(x) > 0.01 or abs(y) > 0.01:
-                    self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, x, y, 0, 0))
+        #tilt
+        if self._camera_tool is not None:
+            x = (buf[0] - 127) * self._axis_scale[0] + self._axis_offset[0]
+            y = (buf[1] - 127) * self._axis_scale[1] + self._axis_offset[1]
+            if abs(x) > self._axis_threshold[0] or abs(y) > self._axis_threshold[1]:
+                self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, x, y, 0, 0))
         buttons = buf[3] & 0x7f
         if buttons == 1: #red
             if self._camera_tool is not None:
