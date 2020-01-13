@@ -163,7 +163,7 @@ class HIDMouse(Extension, QObject,):
     def _processTargetValues(self):
         if self._target_values["resetview"]:
             self._resetView(self._target_values["resetview"])
-        else:
+        elif self._camera_tool:
             if self._target_values["movx"] != 0.0 or self._target_values["movy"] != 0.0:
                 self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, self._target_values["movx"], self._target_values["movy"], 0, 0))
             if self._target_values["rotx"] != 0 or self._target_values["roty"] != 0:
@@ -200,32 +200,30 @@ class HIDMouse(Extension, QObject,):
 
     def _spacemouseAxisEvent(self, vals):
         Logger.log("d", "Axes [%f,%f,%f,%f,%f,%f]", vals[0], vals[1], vals[2], vals[3], vals[4], vals[5])
-        if self._camera_tool:
-            self._initTargetValues()
-            for i in range(0, 6):
-                if abs(vals[i]) > self._axis_threshold[i]:
-                    self._target_values[self._axis_target[i]] = vals[i]
-            self._processTargetValues();
+        self._initTargetValues()
+        for i in range(0, 6):
+            if abs(vals[i]) > self._axis_threshold[i]:
+                self._target_values[self._axis_target[i]] = vals[i]
+        self._processTargetValues();
 
     def _spacemouseButtonEvent(self, button, val):
         Logger.log("d", "button[%d] = %f", button, val)
 
     def _decodeTiltpadEvent(self, buf):
-        if self._camera_tool:
-            self._initTargetValues()
-            scale = 1.0
-            #tilt
-            for a in range(0, 2):
-                val = (buf[a] - 127) * scale * self._axis_scale[a] + self._axis_offset[a]
-                if abs(val) > self._axis_threshold[a]:
-                    self._target_values[self._axis_target[a]] = val
-            buttons = buf[3] & 0x7f
-            if buttons != 0:
-                button_defs = self._hid_profile["buttons"]
-                for b in button_defs:
-                    if buttons == int(b, base = 16):
-                        self._target_values[button_defs[b]["target"]] = button_defs[b]["value"]
-            self._processTargetValues()
+        self._initTargetValues()
+        scale = 1.0
+        #tilt
+        for a in range(0, 2):
+            val = (buf[a] - 127) * scale * self._axis_scale[a] + self._axis_offset[a]
+            if abs(val) > self._axis_threshold[a]:
+                self._target_values[self._axis_target[a]] = val
+        buttons = buf[3] & 0x7f
+        if buttons != 0:
+            button_defs = self._hid_profile["buttons"]
+            for b in button_defs:
+                if buttons == int(b, base = 16):
+                    self._target_values[button_defs[b]["target"]] = button_defs[b]["value"]
+        self._processTargetValues()
 
     def _decodeUnknownEvent(self, buf):
         Logger.log("d", "Unknown event: len = %d [0] = %x", len(buf), buf[0])

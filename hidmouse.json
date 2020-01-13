@@ -35,8 +35,8 @@
     },
     "tiltpad" : {
       "axes" : [
-        { "offset": 0.0, "scale": -0.005, "threshold": 0.01, "target": "movx" },
-        { "offset": 0.0, "scale": -0.005, "threshold": 0.01, "target": "movy" }
+        { "offset": 0.0, "scale": -0.005, "threshold": 0.02, "target": "movx" },
+        { "offset": 0.0, "scale": -0.005, "threshold": 0.02, "target": "movy" }
       ],
       "buttons" : {
         "0x01": { "value": 0.01, "target": "rotx" },
