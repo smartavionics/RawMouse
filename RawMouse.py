@@ -1,5 +1,5 @@
 # Copyright (c) 2020 burtoogle.
-# HIDMouse is released under the terms of the AGPLv3 or higher.
+# RawMouse is released under the terms of the AGPLv3 or higher.
 
 import json
 import sys
@@ -30,7 +30,7 @@ elif sys.platform == "darwin":
 import hid
 del sys.path[-1]
 
-class HIDMouse(Extension, QObject,):
+class RawMouse(Extension, QObject,):
     def __init__(self, parent = None):
         QObject.__init__(self, parent)
         Extension.__init__(self)
@@ -43,7 +43,7 @@ class HIDMouse(Extension, QObject,):
         self._application = None
         self._camera_tool = None
 
-        self.setMenuName(catalog.i18nc("@item:inmenu", "HIDMouse"))
+        self.setMenuName(catalog.i18nc("@item:inmenu", "RawMouse"))
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Restart"), self._restart)
 
         self._buttons = 0
@@ -60,7 +60,7 @@ class HIDMouse(Extension, QObject,):
     def _reload(self):
         self._config = {}
         try:
-            with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hidmouse.json"), "r", encoding = "utf-8") as f:
+            with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.json"), "r", encoding = "utf-8") as f:
                 self._config = json.load(f)
         except Exception as e:
             Logger.log("e", "Exception loading configuration: %s", e)
