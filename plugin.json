@@ -1,7 +1,7 @@
 {
     "name": "HIDMouse",
     "author": "burtoogle",
-    "version": "1.0",
+    "version": "1.0.0",
     "description": "Simple HID mouse interface.",
-    "api": "7.0"
+    "supported_sdk_versions": [ "7.0.0" ]
 }

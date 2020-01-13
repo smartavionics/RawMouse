@@ -11,6 +11,7 @@ from threading import Thread
 from UM.Event import MouseEvent, WheelEvent
 from UM.Extension import Extension
 from UM.Logger import Logger
+#from UM.Math.Vector import Vector
 
 from cura.CuraApplication import CuraApplication
 
@@ -36,7 +37,7 @@ class HIDMouse(Extension, QObject,):
 
         self._decoders = {
             "spacemouse": self._decodeSpacemouseEvent,
-            "tiltpad": self._decodeTiltpadEvent
+            "tiltpad":    self._decodeTiltpadEvent
         }
 
         self._application = None
@@ -52,6 +53,7 @@ class HIDMouse(Extension, QObject,):
         self._start()
 
     def _reload(self):
+        self._config = {}
         try:
             with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hidmouse.json"), "r", encoding = "utf-8") as f:
                 self._config = json.load(f)
@@ -97,12 +99,12 @@ class HIDMouse(Extension, QObject,):
                         self._hid_dev = hid_dev
                         self._cacheProfileValues(known_dev[2])
                         break
-                if self._hid_dev is not None:
+                if self._hid_dev:
                     break
         except Exception as e:
             Logger.log("e", "Exception initialising profile: %s", e)
 
-        if self._hid_dev is not None:
+        if self._hid_dev:
             self._runner = Thread(target = self._run, daemon = True, name = "HID Event Reader")
             self._runner.start()
         else:
@@ -110,7 +112,7 @@ class HIDMouse(Extension, QObject,):
 
     def _stop(self):
         self._running = False
-        while self._runner is not None:
+        while self._runner:
             self._runner.join(timeout = 2.0)
 
     def _run(self):
@@ -135,7 +137,7 @@ class HIDMouse(Extension, QObject,):
                     self._application = CuraApplication.getInstance()
                 elif self._camera_tool is None:
                     self._camera_tool = self._application.getController().getCameraTool()
-                if self._application is not None and not self._application.checkWindowMinimizedState():
+                if self._application and not self._application.checkWindowMinimizedState():
                     d = h.read(64, 1000)
                     if d and self._last_event_at.elapsed() > 50:
                         self._last_event_at.start()
@@ -149,20 +151,21 @@ class HIDMouse(Extension, QObject,):
         self._runner = None
 
     def _decodeSpacemouseEvent(self, buf):
+        scale = 1.0 / 350.0
         if len(buf) == 7 and (buf[0] == 1 or buf[0] == 2):
             for a in range(0, 3):
                 val = buf[2 * a + 1] | buf[2 * a + 2] << 8
                 if val & 0x8000:
                     val = val - 0x10000
                 axis = (buf[0] - 1) * 3 + a
-                self._axis_value[axis] = val / 350.0 * self._axis_scale[axis] + self._axis_offset[axis]
+                self._axis_value[axis] = val * scale * self._axis_scale[axis] + self._axis_offset[axis]
             self._spacemouseAxisEvent(self._axis_value)
         elif len(buf) == 13 and buf[0] == 1:
             for a in range(0, 6):
                 val = buf[2 * a + 1] | buf[2 * a + 2] << 8
                 if val & 0x8000:
                     val = val - 0x10000
-                self._axis_value[a] = val / 350.0 * self._axis_scale[a] + self._axis_offset[a]
+                self._axis_value[a] = val * scale * self._axis_scale[a] + self._axis_offset[a]
             self._spacemouseAxisEvent(self._axis_value)
         elif len(buf) >= 3 and buf[0] == 3:
             buttons = buf[1] | buf[2] << 8
@@ -176,7 +179,7 @@ class HIDMouse(Extension, QObject,):
 
     def _spacemouseAxisEvent(self, vals):
         Logger.log("d", "Axes [%f,%f,%f,%f,%f,%f]", vals[0], vals[1], vals[2], vals[3], vals[4], vals[5])
-        if self._camera_tool is not None:
+        if self._camera_tool:
             value = {
                 "movx": 0.0,
                 "movy": 0.0,
@@ -198,33 +201,41 @@ class HIDMouse(Extension, QObject,):
         Logger.log("d", "button[%d] = %f", button, val)
 
     def _decodeTiltpadEvent(self, buf):
-        #tilt
-        if self._camera_tool is not None:
-            x = (buf[0] - 127) * self._axis_scale[0] + self._axis_offset[0]
-            y = (buf[1] - 127) * self._axis_scale[1] + self._axis_offset[1]
-            if abs(x) > self._axis_threshold[0] or abs(y) > self._axis_threshold[1]:
-                self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, x, y, 0, 0))
-        buttons = buf[3] & 0x7f
-        if buttons == 1: #red
-            if self._camera_tool is not None:
-                self._camera_tool._rotateCamera(0.01, 0)
-        elif buttons == 4: #green
-            if self._camera_tool is not None:
-                self._camera_tool._rotateCamera(-0.01, 0)
-        elif buttons == 8: #blue
-            if self._camera_tool is not None:
-                self._camera_tool._rotateCamera(0, 0.01)
-        elif buttons == 2: #orange
-            if self._camera_tool is not None:
-                self._camera_tool._rotateCamera(0, -0.01)
-        elif buttons == 0x10: #left fire
-            if self._camera_tool is not None:
-                self._camera_tool._zoomCamera(-100)
-        elif buttons == 0x20: #right fire
-            if self._camera_tool is not None:
-                self._camera_tool._zoomCamera(100)
-        elif buttons != 0:
-            Logger.log("d", "Unknown tiltpad event: [0] = %x, [1] = %x, [2] = %x, [3] = %x", buf[0], buf[1], buf[2], buf[3])
+        if self._camera_tool:
+            value = {
+                "movx": 0.0,
+                "movy": 0.0,
+                "rotx": 0.0,
+                "roty": 0.0,
+                "zoom": 0.0,
+                "resetview": None
+            }
+            scale = 1.0
+            #tilt
+            for a in range(0, 2):
+                val = (buf[a] - 127) * scale * self._axis_scale[a] + self._axis_offset[a]
+                if abs(val) > self._axis_threshold[a]:
+                    value[self._axis_target[a]] = val
+            buttons = buf[3] & 0x7f
+            if buttons != 0:
+                button_defs = self._hid_profile["buttons"]
+                for b in button_defs:
+                    if buttons == int(b, base = 16):
+                        value[button_defs[b]["target"]] = button_defs[b]["value"]
+            if value["resetview"]:
+                self._resetView(value["resetview"])
+            else:
+                if value["movx"] != 0.0 or value["movy"] != 0.0:
+                    self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, value["movx"], value["movy"], 0, 0))
+                if value["rotx"] != 0 or value["roty"] != 0:
+                    self._camera_tool._rotateCamera(value["rotx"], value["roty"])
+                if value["zoom"] != 0:
+                    self._camera_tool._zoomCamera(value["zoom"])
 
     def _decodeUnknownEvent(self, buf):
         Logger.log("d", "Unknown event: len = %d [0] = %x", len(buf), buf[0])
+
+    def _resetView(self, view):
+        if self._application:
+            scene = self._application.getController().setCameraRotation(*view)
+

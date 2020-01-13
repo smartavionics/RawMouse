@@ -23,21 +23,30 @@
   "profiles" : {
     "spacemouse" : {
       "axes" : [
-        { "name": "x",     "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "movx" },
-        { "name": "y",     "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "zoom" },
-        { "name": "z",     "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "movy" },
-        { "name": "roll",  "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "none" },
-        { "name": "pitch", "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "roty" },
-        { "name": "yaw",   "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "rotx" }
+        { "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "movx" },
+        { "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "zoom" },
+        { "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "movy" },
+        { "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "none" },
+        { "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "roty" },
+        { "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "rotx" }
       ],
       "buttons" : [
       ]
     },
     "tiltpad" : {
       "axes" : [
-        { "name": "tilt-x", "offset": 0.0, "scale": -0.001, "threshold": 0.01 },
-        { "name": "tilt-y", "offset": 0.0, "scale": -0.001, "threshold": 0.01 }
-      ]
+        { "offset": 0.0, "scale": -0.005, "threshold": 0.01, "target": "movx" },
+        { "offset": 0.0, "scale": -0.005, "threshold": 0.01, "target": "movy" }
+      ],
+      "buttons" : {
+        "0x01": { "value": 0.01, "target": "rotx" },
+        "0x04": { "value": -0.01, "target": "rotx" },
+        "0x08": { "value": 0.01, "target": "roty" },
+        "0x02": { "value": -0.01, "target": "roty" },
+        "0x10": { "value": -100, "target": "zoom" },
+        "0x20": { "value": 100, "target": "zoom" },
+        "0x30": { "value": [ "3d" ], "target": "resetview" }
+      }
     }
   }
 }
