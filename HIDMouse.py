@@ -162,7 +162,8 @@ class HIDMouse(Extension, QObject,):
 
     def _processTargetValues(self):
         if self._target_values["resetview"]:
-            self._resetView(self._target_values["resetview"])
+            if self._application:
+                self._application.getController().setCameraRotation(*self._target_values["resetview"])
         elif self._camera_tool:
             if self._target_values["movx"] != 0.0 or self._target_values["movy"] != 0.0:
                 self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, self._target_values["movx"], self._target_values["movy"], 0, 0))
@@ -227,8 +228,4 @@ class HIDMouse(Extension, QObject,):
 
     def _decodeUnknownEvent(self, buf):
         Logger.log("d", "Unknown event: len = %d [0] = %x", len(buf), buf[0])
-
-    def _resetView(self, view):
-        if self._application:
-            scene = self._application.getController().setCameraRotation(*view)
 
