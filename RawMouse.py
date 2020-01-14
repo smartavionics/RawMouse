@@ -74,6 +74,10 @@ class RawMouse(Extension, QObject,):
             self._min_camera_update_period = 1000 / self._config["maxhz"]
         else:
             self._min_camera_update_period = 100
+        if "verbose" in self._config:
+            self._verbose = self._config["verbose"]
+        else:
+            self._verbose = 0
         self._axis_threshold = []
         self._axis_scale = []
         self._axis_offset = []
@@ -205,28 +209,39 @@ class RawMouse(Extension, QObject,):
             for b in range(0, 16):
                 mask = 1 << b
                 if ((buttons & mask) != (self._buttons & mask)):
-                    self._spacemouseButtonEvent(b, (buttons & mask) >> b)
+                    self._spacemouseButtonEvent(b + 1, (buttons & mask) >> b)
             self._buttons = buttons
         else:
             Logger.log("d", "Unknown spacemouse event: code = %x, len = %d", buf[0], len(buf))
 
     def _spacemouseAxisEvent(self, vals):
-        #Logger.log("d", "Axes [%f,%f,%f,%f,%f,%f]", vals[0], vals[1], vals[2], vals[3], vals[4], vals[5])
+        if self._verbose > 0:
+            Logger.log("d", "Axes [%f,%f,%f,%f,%f,%f]", vals[0], vals[1], vals[2], vals[3], vals[4], vals[5])
         self._initTargetValues()
         process = False
         scale = self._getScalingDueToZoom()
         for i in range(0, 6):
             if vals[i] > self._axis_threshold[i]:
-                self._target_values[self._axis_target[i]] = (vals[i] - self._axis_threshold[a]) * scale
+                self._target_values[self._axis_target[i]] = (vals[i] - self._axis_threshold[i]) * scale
                 process = True
             elif vals[i] < -self._axis_threshold[i]:
-                self._target_values[self._axis_target[i]] = (vals[i] + self._axis_threshold[a]) * scale
+                self._target_values[self._axis_target[i]] = (vals[i] + self._axis_threshold[i]) * scale
                 process = True
         if process:
             self._processTargetValues();
 
     def _spacemouseButtonEvent(self, button, val):
         Logger.log("d", "button[%d] = %f", button, val)
+        if val == 1:
+            self._initTargetValues();
+            process = False
+            button_defs = self._hid_profile["buttons"]
+            for b in button_defs:
+                if button == int(b):
+                    self._target_values[button_defs[b]["target"]] = button_defs[b]["value"]
+                    process = True
+            if process:
+                self._processTargetValues()
 
     def _decodeTiltpadEvent(self, buf):
         self._initTargetValues()
