@@ -1,5 +1,6 @@
 
 {
+  "maxhz" : 20,
   "devices" : [
     [ "0x046d", "0xc603", "spacemouse", "3Dconnexion Spacemouse Plus XT" ],
     [ "0x046d", "0xc605", "spacemouse", "3Dconnexion CADman" ],
@@ -35,8 +36,8 @@
     },
     "tiltpad" : {
       "axes" : [
-        { "offset": 0.0, "scale": -0.005, "threshold": 0.02, "target": "movx" },
-        { "offset": 0.0, "scale": -0.005, "threshold": 0.02, "target": "movy" }
+        { "offset": 0.0, "scale": -0.003, "threshold": 0.05, "target": "movx" },
+        { "offset": 0.0, "scale": -0.003, "threshold": 0.05, "target": "movy" }
       ],
       "buttons" : {
         "0x01": { "value": 0.01, "target": "rotx" },

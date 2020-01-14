@@ -41,6 +41,8 @@ class RawMouse(Extension, QObject,):
         }
 
         self._application = None
+        self._controller = None
+        self._scene = None
         self._camera_tool = None
 
         self.setMenuName(catalog.i18nc("@item:inmenu", "RawMouse"))
@@ -68,6 +70,10 @@ class RawMouse(Extension, QObject,):
     def _cacheProfileValues(self, profile_name):
         self._hid_profile_name = profile_name
         self._hid_profile = self._config["profiles"][profile_name]
+        if "maxhz" in self._config:
+            self._min_camera_update_period = 1000 / self._config["maxhz"]
+        else:
+            self._min_camera_update_period = 100
         self._axis_threshold = []
         self._axis_scale = []
         self._axis_offset = []
@@ -130,17 +136,19 @@ class RawMouse(Extension, QObject,):
             Logger.log("i", "Product: %s", h.get_product_string())
             #Logger.log("i", "Serial No: %s", h.get_serial_number_string())
 
-            self._last_event_at = QTime()
-            self._last_event_at.start()
+            self._last_camera_update_at = QTime()
+            self._last_camera_update_at.start()
             while self._running:
                 if self._application is None:
                     self._application = CuraApplication.getInstance()
+                elif self._controller is None:
+                    self._controller = self._application.getController()
                 elif self._camera_tool is None:
-                    self._camera_tool = self._application.getController().getCameraTool()
+                    self._camera_tool = self._controller.getCameraTool()
+                    self._scene = self._controller.getScene()
                 if self._application and not self._application.checkWindowMinimizedState():
                     d = h.read(64, 1000)
-                    if d and self._last_event_at.elapsed() > 50:
-                        self._last_event_at.start()
+                    if d:
                         self._decoder(d)
                 else:
                     time.sleep(1.0)
@@ -162,14 +170,17 @@ class RawMouse(Extension, QObject,):
 
     def _processTargetValues(self):
         if self._target_values["resetview"]:
-            if self._application:
-                self._application.getController().setCameraRotation(*self._target_values["resetview"])
-        elif self._camera_tool:
+            if self._controller:
+                self._controller.setCameraRotation(*self._target_values["resetview"])
+        elif self._camera_tool and self._last_camera_update_at.elapsed() > self._min_camera_update_period:
             if self._target_values["movx"] != 0.0 or self._target_values["movy"] != 0.0:
+                self._last_camera_update_at.start()
                 self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, self._target_values["movx"], self._target_values["movy"], 0, 0))
             if self._target_values["rotx"] != 0 or self._target_values["roty"] != 0:
+                self._last_camera_update_at.start()
                 self._camera_tool._rotateCamera(self._target_values["rotx"], self._target_values["roty"])
             if self._target_values["zoom"] != 0:
+                self._last_camera_update_at.start()
                 self._camera_tool._zoomCamera(self._target_values["zoom"])
 
     def _decodeSpacemouseEvent(self, buf):
@@ -200,32 +211,54 @@ class RawMouse(Extension, QObject,):
             Logger.log("d", "Unknown spacemouse event: code = %x, len = %d", buf[0], len(buf))
 
     def _spacemouseAxisEvent(self, vals):
-        Logger.log("d", "Axes [%f,%f,%f,%f,%f,%f]", vals[0], vals[1], vals[2], vals[3], vals[4], vals[5])
+        #Logger.log("d", "Axes [%f,%f,%f,%f,%f,%f]", vals[0], vals[1], vals[2], vals[3], vals[4], vals[5])
         self._initTargetValues()
+        process = False
+        scale = self._getScalingDueToZoom()
         for i in range(0, 6):
-            if abs(vals[i]) > self._axis_threshold[i]:
-                self._target_values[self._axis_target[i]] = vals[i]
-        self._processTargetValues();
+            if vals[i] > self._axis_threshold[i]:
+                self._target_values[self._axis_target[i]] = (vals[i] - self._axis_threshold[a]) * scale
+                process = True
+            elif vals[i] < -self._axis_threshold[i]:
+                self._target_values[self._axis_target[i]] = (vals[i] + self._axis_threshold[a]) * scale
+                process = True
+        if process:
+            self._processTargetValues();
 
     def _spacemouseButtonEvent(self, button, val):
         Logger.log("d", "button[%d] = %f", button, val)
 
     def _decodeTiltpadEvent(self, buf):
         self._initTargetValues()
-        scale = 1.0
+        scale = self._getScalingDueToZoom()
+        process = False
         #tilt
         for a in range(0, 2):
-            val = (buf[a] - 127) * scale * self._axis_scale[a] + self._axis_offset[a]
-            if abs(val) > self._axis_threshold[a]:
-                self._target_values[self._axis_target[a]] = val
+            val = (buf[a] - 127) * self._axis_scale[a] + self._axis_offset[a]
+            if val > self._axis_threshold[a]:
+                self._target_values[self._axis_target[a]] = (val - self._axis_threshold[a]) * scale
+                process = True
+            elif val < -self._axis_threshold[a]:
+                self._target_values[self._axis_target[a]] = (val + self._axis_threshold[a]) * scale
+                process = True
         buttons = buf[3] & 0x7f
         if buttons != 0:
             button_defs = self._hid_profile["buttons"]
             for b in button_defs:
                 if buttons == int(b, base = 16):
                     self._target_values[button_defs[b]["target"]] = button_defs[b]["value"]
-        self._processTargetValues()
+                    process = True
+        if process:
+            self._processTargetValues()
 
     def _decodeUnknownEvent(self, buf):
         Logger.log("d", "Unknown event: len = %d [0] = %x", len(buf), buf[0])
 
+    def _getScalingDueToZoom(self):
+        scale = 1.0
+        if self._scene:
+            zoom_factor = self._scene.getActiveCamera().getZoomFactor();
+            if zoom_factor < -0.4:
+                scale = 0.1 + 9 * (zoom_factor - -0.5)
+                #Logger.log("d", "scale = %f", scale)
+        return scale
