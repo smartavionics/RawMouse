@@ -1,6 +1,7 @@
 
 {
   "maxhz" : 20,
+  "verbose" : 0,
   "devices" : [
     [ "0x046d", "0xc603", "spacemouse", "3Dconnexion Spacemouse Plus XT" ],
     [ "0x046d", "0xc605", "spacemouse", "3Dconnexion CADman" ],
@@ -18,21 +19,23 @@
     [ "0x256f", "0xc631", "spacemouse", "3Dconnexion Space Mouse Pro Wireless (cabled)" ],
     [ "0x256f", "0xc632", "spacemouse", "3Dconnexion Space Mouse Pro Wireless" ],
     [ "0x256f", "0xc635", "spacemouse", "3Dconnexion Space Mouse Compact" ],
+    [ "0x256f", "0xc652", "spacemouse", "3Dconnexion Space Mouse Universal Receiver" ],
 
     [ "0x047d", "0x4008", "tiltpad", "Kensington Gravis Destroyer TiltPad" ]
   ],
   "profiles" : {
     "spacemouse" : {
       "axes" : [
-        { "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "movx" },
-        { "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "zoom" },
-        { "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "movy" },
-        { "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "none" },
-        { "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "roty" },
-        { "offset": 0.0, "scale": 0.001, "threshold": 0.01, "target": "rotx" }
+        { "offset": 0.0, "scale": -0.1, "threshold": 0.01, "target": "movx" },
+        { "offset": 0.0, "scale": -100.0, "threshold": 1.0, "target": "zoom" },
+        { "offset": 0.0, "scale": -0.1, "threshold": 0.01, "target": "movy" },
+        { "offset": 0.0, "scale": -0.05, "threshold": 0.01, "target": "roty" },
+        { "offset": 0.0, "scale":  0.05, "threshold": 0.01, "target": "none" },
+        { "offset": 0.0, "scale":  0.05, "threshold": 0.01, "target": "rotx" }
       ],
-      "buttons" : [
-      ]
+      "buttons" : {
+        "1": { "value": [ "3d" ], "target": "resetview" }
+      }
     },
     "tiltpad" : {
       "axes" : [
