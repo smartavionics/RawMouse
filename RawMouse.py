@@ -52,6 +52,7 @@ class RawMouse(Extension, QObject,):
         self._buttons = 0
         self._running = False
         self._runner = None
+        self._show_prepare = True
 
         self.processTargetValues.connect(self._processTargetValues)
 
@@ -173,25 +174,38 @@ class RawMouse(Extension, QObject,):
             "rotx": 0.0,
             "roty": 0.0,
             "zoom": 0.0,
-            "resetview": None
+            "resetview": None,
+            "toggleview": None
         }
 
     processTargetValues = Signal()
 
     def _processTargetValues(self):
-        if self._target_values["resetview"]:
-            if self._controller:
-                self._controller.setCameraRotation(*self._target_values["resetview"])
-        elif self._camera_tool and self._last_camera_update_at.elapsed() > self._min_camera_update_period:
-            if self._target_values["movx"] != 0.0 or self._target_values["movy"] != 0.0:
-                self._last_camera_update_at.start()
-                self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, self._target_values["movx"], self._target_values["movy"], 0, 0))
-            if self._target_values["rotx"] != 0 or self._target_values["roty"] != 0:
-                self._last_camera_update_at.start()
-                self._camera_tool._rotateCamera(self._target_values["rotx"], self._target_values["roty"])
-            if self._target_values["zoom"] != 0:
-                self._last_camera_update_at.start()
-                self._camera_tool._zoomCamera(self._target_values["zoom"])
+        try:
+            if self._target_values["resetview"]:
+                if self._controller:
+                    self._controller.setCameraRotation(*self._target_values["resetview"])
+            elif self._target_values["toggleview"]:
+                self._show_prepare = not self._show_prepare
+                if self._controller:
+                    if self._show_prepare:
+                        self._controller.setActiveStage("PrepareStage")
+                        self._controller.setActiveView("SolidView")
+                    else:
+                        self._controller.setActiveStage("PreviewStage")
+                        self._controller.setActiveView("SimulationView")
+            elif self._camera_tool and self._last_camera_update_at.elapsed() > self._min_camera_update_period:
+                if self._target_values["movx"] != 0.0 or self._target_values["movy"] != 0.0:
+                    self._last_camera_update_at.start()
+                    self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, self._target_values["movx"], self._target_values["movy"], 0, 0))
+                if self._target_values["rotx"] != 0 or self._target_values["roty"] != 0:
+                    self._last_camera_update_at.start()
+                    self._camera_tool._rotateCamera(self._target_values["rotx"], self._target_values["roty"])
+                if self._target_values["zoom"] != 0:
+                    self._last_camera_update_at.start()
+                    self._camera_tool._zoomCamera(self._target_values["zoom"])
+        except Exception as e:
+            Logger.log("e", "Exception while processing target values: %s", e)
 
     def _decodeSpacemouseEvent(self, buf):
         scale = 1.0 / 350.0
