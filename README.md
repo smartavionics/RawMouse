@@ -13,11 +13,16 @@ The plugin includes binary components (cython-hidapi) that are required to acces
 
 ### Limitations
 
-On all systems you need to disable any existing driver so that RawMouse can gain access to the device.
+This plugin can only be used with devices whose HID message protocol it knows about. At this time, the only supported devices are a bunch of 3Dconnexion Spacemice products
+and a Gravis Tiltpad (which I don't seriously expect anyone to try and use with Cura). If you have some other device that you would like to use and have a description of the
+HID messages it uses then it can be added.
+
+On all systems you need to disable any existing driver so that RawMouse can gain access to the device. On Windows, there is a *Stop 3DxWare* command that disables the
+normal Spacemouse driver.
 
 Other programs cannot access the device while Cura is running.
 
-RawMouse simply translates the device's output into the equivalent input from the standard mouse. It does not provide any new modes of operation.
+Currently, RawMouse simply translates the device's output into the equivalent input from the standard mouse. It does not provide any new modes of operation.
 
 ---
 
@@ -26,11 +31,13 @@ RawMouse simply translates the device's output into the equivalent input from th
 Download or clone this repository into [Cura configuration folder]/plugins/RawMouse
 The configuration folder can be found via Help -> Show Configuration Folder inside Cura.
 
+Alternatively, download and unzip a release.
+
 ---
 
 ### Linux Permissions
 
-On Linux, you need to allow non-root users access to the hidraw devices. That can be done by creating a file /etc/udev/rules.d/10-hidraw.rules that contains the following:
+On Linux, you need to allow non-root users access to the hidraw devices. That can be done by creating a file **/etc/udev/rules.d/10-hidraw.rules** that contains the following:
 
 `KERNEL=="hidraw*", SUBSYSTEM=="hidraw", MODE="0666"`
 
@@ -62,7 +69,8 @@ the name of the device profile to use and a description.
 
 **offset** is added to the axis value to remove any bias the device may have.
 
-**scale** scales the axis value.
+**scale** scales the axis value. If you want to make the axis faster, increase the value. To slow the axis down, reduce the value. To flip the direction of movement,
+change the sign.
 
 **threshold** is the minimum value an axis must have before it has any effect.
 
@@ -71,6 +79,9 @@ the name of the device profile to use and a description.
 
 **buttons** is a dictionary of button definitions. The element keys are strings that match the button state and the value is a dictionary that specifies *value* and and *target* for the button.
 When a button is activated, the specified target function is passed the value.
+
+The Spacemice are configured so that button 1 resets the view (useful when you get lost in space) and button 2 toggles between the Cura prepare and preview screens which
+is useful if the preview screen is slow to render as you can quickly switch to the prepare screen, manoeuvre, and then switch back to the preview screen.
 
 ---
 
@@ -85,3 +96,22 @@ RawMouse is released under the terms of the [AGPLv3](LICENSE) or higher.
 ### Kudos
 
 RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access the HID devices.
+
+---
+
+### Known Issues
+
+* On Windows, the Wireless Spacemouse that comes with a universal receiver silently fails. The same Spacemouse will work if connected by USB cable.
+
+* Complex models can be slow to move when the preview screen is active but there's not much that can be done about that here.
+
+* The rotation motion is rather weird because it's still using the original 2D mouse code. More work is needed here.
+
+---
+
+### History
+
+1.0.0 - initial release.
+
+---
+
