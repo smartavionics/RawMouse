@@ -11,7 +11,7 @@ from threading import Thread
 from UM.Event import MouseEvent, WheelEvent
 from UM.Extension import Extension
 from UM.Logger import Logger
-#from UM.Math.Vector import Vector
+from UM.Signal import Signal, signalemitter
 
 from cura.CuraApplication import CuraApplication
 
@@ -30,6 +30,7 @@ elif sys.platform == "darwin":
 import hid
 del sys.path[-1]
 
+@signalemitter
 class RawMouse(Extension, QObject,):
     def __init__(self, parent = None):
         QObject.__init__(self, parent)
@@ -51,6 +52,9 @@ class RawMouse(Extension, QObject,):
         self._buttons = 0
         self._running = False
         self._runner = None
+
+        self.processTargetValues.connect(self._processTargetValues)
+
         self._reload()
         self._start()
 
@@ -115,7 +119,7 @@ class RawMouse(Extension, QObject,):
             Logger.log("e", "Exception initialising profile: %s", e)
 
         if self._hid_dev:
-            self._runner = Thread(target = self._run, daemon = True, name = "HID Event Reader")
+            self._runner = Thread(target = self._run, daemon = True, name = "RawMouse")
             self._runner.start()
         else:
             Logger.log("w", "No known HID device found")
@@ -172,6 +176,8 @@ class RawMouse(Extension, QObject,):
             "resetview": None
         }
 
+    processTargetValues = Signal()
+
     def _processTargetValues(self):
         if self._target_values["resetview"]:
             if self._controller:
@@ -211,6 +217,8 @@ class RawMouse(Extension, QObject,):
                 if ((buttons & mask) != (self._buttons & mask)):
                     self._spacemouseButtonEvent(b + 1, (buttons & mask) >> b)
             self._buttons = buttons
+        elif len(buf) >= 3 and buf[0] == 0x17:
+            Logger.log("d", "Spacemouse battery %d%%", buf[1])
         else:
             Logger.log("d", "Unknown spacemouse event: code = %x, len = %d", buf[0], len(buf))
 
@@ -228,7 +236,7 @@ class RawMouse(Extension, QObject,):
                 self._target_values[self._axis_target[i]] = (vals[i] + self._axis_threshold[i]) * scale
                 process = True
         if process:
-            self._processTargetValues();
+            self.processTargetValues.emit();
 
     def _spacemouseButtonEvent(self, button, val):
         Logger.log("d", "button[%d] = %f", button, val)
@@ -241,7 +249,7 @@ class RawMouse(Extension, QObject,):
                     self._target_values[button_defs[b]["target"]] = button_defs[b]["value"]
                     process = True
             if process:
-                self._processTargetValues()
+                self.processTargetValues.emit();
 
     def _decodeTiltpadEvent(self, buf):
         self._initTargetValues()
@@ -264,7 +272,7 @@ class RawMouse(Extension, QObject,):
                     self._target_values[button_defs[b]["target"]] = button_defs[b]["value"]
                     process = True
         if process:
-            self._processTargetValues()
+            self.processTargetValues.emit();
 
     def _decodeUnknownEvent(self, buf):
         Logger.log("d", "Unknown event: len = %d [0] = %x", len(buf), buf[0])
