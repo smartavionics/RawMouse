@@ -33,6 +33,8 @@ The configuration folder can be found via Help -> Show Configuration Folder insi
 
 Alternatively, download and unzip a release.
 
+Cloning this repository is best because then you can make local edits to the configuration file and even RawMouse.py and still be able to merge future updates without losing any changes you have made.
+
 ---
 
 ### Linux Permissions
