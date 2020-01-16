@@ -253,7 +253,8 @@ class RawMouse(Extension, QObject,):
             self.processTargetValues.emit();
 
     def _spacemouseButtonEvent(self, button, val):
-        Logger.log("d", "button[%d] = %f", button, val)
+        if self._verbose > 0:
+            Logger.log("d", "button[%d] = %f", button, val)
         if val == 1:
             self._initTargetValues();
             process = False
