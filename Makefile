@@ -2,9 +2,9 @@
 
 NAME = RawMouse
 
-FILES = $(addprefix $(NAME)/,$(shell git ls-files))
+FILES = $(shell git ls-files)
 
 default: ../$(NAME).zip
 
-../$(NAME).zip: *
-	cd ..; zip -u $(NAME).zip $(FILES) -x $(NAME)/Makefile || true
+../$(NAME).zip: $(FILES)
+	cd ..; zip -u $(NAME).zip $(addprefix $(NAME)/,$(FILES)) -x $(NAME)/Makefile || true
