@@ -11,6 +11,7 @@ from threading import Thread
 from UM.Event import MouseEvent, WheelEvent
 from UM.Extension import Extension
 from UM.Logger import Logger
+from UM.Message import Message
 from UM.Signal import Signal, signalemitter
 
 from cura.CuraApplication import CuraApplication
@@ -48,11 +49,14 @@ class RawMouse(Extension, QObject,):
 
         self.setMenuName(catalog.i18nc("@item:inmenu", "RawMouse"))
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Restart"), self._restart)
+        self.addMenuItem(catalog.i18nc("@item:inmenu", "Show Battery Level"), self._showBatteryLevel)
 
         self._buttons = 0
         self._running = False
         self._runner = None
         self._show_prepare = True
+        self._battery_level = None
+        self._message = Message(title=catalog.i18nc("@info:title", "RawMouse"))
 
         self.processTargetValues.connect(self._processTargetValues)
 
@@ -232,7 +236,8 @@ class RawMouse(Extension, QObject,):
                     self._spacemouseButtonEvent(b + 1, (buttons & mask) >> b)
             self._buttons = buttons
         elif len(buf) >= 3 and buf[0] == 0x17:
-            Logger.log("d", "Spacemouse battery %d%%", buf[1])
+            self._battery_level = buf[1]
+            Logger.log("d", "Spacemouse battery level %d%%", buf[1])
         else:
             Logger.log("d", "Unknown spacemouse event: code = %x, len = %d", buf[0], len(buf))
 
@@ -264,7 +269,7 @@ class RawMouse(Extension, QObject,):
                     self._target_values[button_defs[b]["target"]] = button_defs[b]["value"]
                     process = True
             if process:
-                self.processTargetValues.emit();
+                self.processTargetValues.emit()
 
     def _decodeTiltpadEvent(self, buf):
         self._initTargetValues()
@@ -300,3 +305,11 @@ class RawMouse(Extension, QObject,):
                 scale = 0.1 + 9 * (zoom_factor - -0.5)
                 #Logger.log("d", "scale = %f", scale)
         return scale
+
+    def _showBatteryLevel(self):
+        self._showMessage("Battery level is " + ("unknown" if self._battery_level is None else (str(self._battery_level) + "%")))
+
+    def _showMessage(self, str):
+        self._message.hide()
+        self._message.setText(catalog.i18nc("@info:status", str))
+        self._message.show()
