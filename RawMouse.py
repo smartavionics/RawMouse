@@ -97,6 +97,7 @@ class RawMouse(Extension, QObject,):
         else:
             self._decoder = self._decodeUnknownEvent
         hid_profile_axes = self._hid_profile["axes"]
+        Logger.log("d", "Device %s / %s, profile %s", self._hid_dev["manufacturer_string"], self._hid_dev["product_string"], self._hid_profile_name);
         for i in range(0, len(hid_profile_axes)):
             axis_vals = hid_profile_axes[i]
             self._axis_threshold.append(axis_vals["threshold"])
@@ -107,7 +108,7 @@ class RawMouse(Extension, QObject,):
             else:
                 self._axis_target.append("")
             self._axis_value.append(0.0)
-            Logger.log("d", "%s: axis %d, scale = %f, threshold = %f, offset = %f, target = %s", self._hid_profile_name, i, self._axis_scale[i], self._axis_threshold[i], self._axis_offset[i], self._axis_target[i])
+            Logger.log("d", "axis %d, scale = %f, threshold = %f, offset = %f, target = %s", i, self._axis_scale[i], self._axis_threshold[i], self._axis_offset[i], self._axis_target[i])
 
     def _start(self):
         self._hid_dev = None
