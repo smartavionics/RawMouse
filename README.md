@@ -103,8 +103,6 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 
 ### Known Issues
 
-* On Windows and MacOS, the Wireless Spacemouse that comes with a universal receiver silently fails. The same Spacemouse will work if connected by USB cable.
-
 * Complex models can be slow to move when the preview screen is active but there's not much that can be done about that here.
 
 * The rotation motion is rather weird because it's still using the original 2D mouse code. More work is needed here.
@@ -114,6 +112,10 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 ### History
 
 1.0.0 - initial release.
+
+1.0.1 - fix meta data blunder
+
+1.0.2 - fix Universal Receiver not working on Windows & MacOS
 
 ---
 
