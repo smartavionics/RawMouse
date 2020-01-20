@@ -62,8 +62,9 @@ The configuration file elements are:
 
 **maxhz** max number of screen updates per second
 
-**devices** is an array of device definitions, one for each supported device. Each definition specifies the vendor and product USB ids for the device,
-the name of the device profile to use and a description.
+**devices** is an array of device definitions, one for each supported device. Each definition is an array whose elements specify the vendor and product USB ids
+ for the device, the name of the device profile to use and a description. Optionally, an extra dictionary of additional values can be specified.
+ Currently, only *usage_page* and *usage* values are recognised and they are used to select a particular HID interface when the device presents multiple interfaces.
 
 **profiles** is dictionary of profile definitions. Each profile definition defines the axes and buttons the profile knows about.
 
@@ -105,7 +106,7 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 
 * Complex models can be slow to move when the preview screen is active but there's not much that can be done about that here.
 
-* The rotation motion is rather weird because it's still using the original 2D mouse code. More work is needed here.
+* The rotation motion is rather weird because it's still using the original 2D mouse code.
 
 ---
 
