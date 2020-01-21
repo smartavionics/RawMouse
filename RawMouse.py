@@ -57,6 +57,7 @@ class RawMouse(Extension, QObject,):
         self._show_prepare = True
         self._battery_level = None
         self._message = Message(title=catalog.i18nc("@info:title", "RawMouse"))
+        self._redraw_pending = False
 
         self.processTargetValues.connect(self._processTargetValues)
 
@@ -218,6 +219,7 @@ class RawMouse(Extension, QObject,):
                     self._camera_tool._zoomCamera(self._target_values["zoom"])
         except Exception as e:
             Logger.log("e", "Exception while processing target values: %s", e)
+        self._redraw_pending = False
 
     def _decodeSpacemouseEvent(self, buf):
         scale = 1.0 / 350.0
@@ -263,7 +265,9 @@ class RawMouse(Extension, QObject,):
                 self._target_values[self._axis_target[i]] = (vals[i] + self._axis_threshold[i]) * scale
                 process = True
         if process:
-            self.processTargetValues.emit();
+            if not self._redraw_pending:
+                self._redraw_pending = True
+                self.processTargetValues.emit();
 
     def _spacemouseButtonEvent(self, button, val):
         if self._verbose > 0:
@@ -277,7 +281,9 @@ class RawMouse(Extension, QObject,):
                     self._target_values[button_defs[b]["target"]] = button_defs[b]["value"]
                     process = True
             if process:
-                self.processTargetValues.emit()
+                if not self._redraw_pending:
+                    self._redraw_pending = True
+                    self.processTargetValues.emit()
 
     def _decodeTiltpadEvent(self, buf):
         self._initTargetValues()
@@ -300,7 +306,9 @@ class RawMouse(Extension, QObject,):
                     self._target_values[button_defs[b]["target"]] = button_defs[b]["value"]
                     process = True
         if process:
-            self.processTargetValues.emit();
+            if not self._redraw_pending:
+                self._redraw_pending = True
+                self.processTargetValues.emit();
 
     def _decodeUnknownEvent(self, buf):
         Logger.log("d", "Unknown event: len = %d [0] = %x", len(buf), buf[0])
