@@ -49,7 +49,7 @@ class RawMouse(Extension, QObject,):
 
         self.setMenuName(catalog.i18nc("@item:inmenu", "RawMouse"))
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Restart"), self._restart)
-        self.addMenuItem(catalog.i18nc("@item:inmenu", "Show Battery Level"), self._showBatteryLevel)
+        self.addMenuItem(catalog.i18nc("@item:inmenu", "Show Device Information"), self._showDeviceInformation)
 
         self._buttons = 0
         self._running = False
@@ -320,8 +320,16 @@ class RawMouse(Extension, QObject,):
                 #Logger.log("d", "scale = %f", scale)
         return scale
 
-    def _showBatteryLevel(self):
-        self._showMessage("Battery level is " + ("unknown" if self._battery_level is None else (str(self._battery_level) + "%")))
+    def _showDeviceInformation(self):
+        try:
+            message = "No device found"
+            if self._hid_dev is not None:
+                message = "Manufacturer: " + self._hid_dev["manufacturer_string"] + "\nProduct: " + self._hid_dev["product_string"] + "\nProfile: " + self._hid_profile_name;
+            if self._battery_level is not None:
+                message = message + "\nBattery level: " + str(self._battery_level) + "%"
+            self._showMessage(message)
+        except Exception as e:
+            Logger.log("e", "Exception while showing device information: %s", e)
 
     def _showMessage(self, str):
         self._message.hide()
