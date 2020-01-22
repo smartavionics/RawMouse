@@ -54,7 +54,6 @@ class RawMouse(Extension, QObject,):
         self._buttons = 0
         self._running = False
         self._runner = None
-        self._show_prepare = True
         self._battery_level = None
         self._message = Message(title=catalog.i18nc("@info:title", "RawMouse"))
         self._redraw_pending = False
@@ -199,9 +198,8 @@ class RawMouse(Extension, QObject,):
                 if self._controller:
                     self._controller.setCameraRotation(*self._target_values["resetview"])
             elif self._target_values["toggleview"]:
-                self._show_prepare = not self._show_prepare
                 if self._controller:
-                    if self._show_prepare:
+                    if self._controller.getActiveView().getPluginId() == "SimulationView":
                         self._controller.setActiveStage("PrepareStage")
                         self._controller.setActiveView("SolidView")
                     else:
