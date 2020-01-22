@@ -1,7 +1,7 @@
 {
     "name": "RawMouse",
     "author": "burtoogle",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Simple HID mouse interface.",
     "supported_sdk_versions": [ "7.0.0" ]
 }
