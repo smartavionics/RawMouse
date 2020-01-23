@@ -114,9 +114,11 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 
 1.0.0 - initial release.
 
-1.0.1 - fix meta data blunder
+1.0.1 - fix meta data blunder.
 
-1.0.2 - fix Universal Receiver not working on Windows & MacOS
+1.0.2 - fix Universal Receiver not working on Windows & MacOS.
+
+1.0.3 - implemented rotroll target and renamed rotx -> rotyaw and roty -> rotpitch.
 
 ---
 
