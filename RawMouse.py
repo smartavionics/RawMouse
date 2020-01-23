@@ -323,10 +323,14 @@ class RawMouse(Extension, QObject,):
     def _showDeviceInformation(self):
         try:
             message = "No device found"
-            if self._hid_dev is not None:
+            if self._hid_dev:
                 message = "Manufacturer: " + self._hid_dev["manufacturer_string"] + "\nProduct: " + self._hid_dev["product_string"] + "\nProfile: " + self._hid_profile_name;
             if self._battery_level is not None:
                 message = message + "\nBattery level: " + str(self._battery_level) + "%"
+            if self._hid_profile:
+                message = message + "\nAxes:"
+                for i in range(0, len(self._axis_scale)):
+                    message = message + "\n [" + str(i) + "] scale " + str(self._axis_scale[i]) + " threshold " + str(self._axis_threshold[i]) + " offset " + str(self._axis_offset[i]) + " -> " + self._axis_target[i]
             self._showMessage(message)
         except Exception as e:
             Logger.log("e", "Exception while showing device information: %s", e)
