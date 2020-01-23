@@ -2,6 +2,7 @@
 # RawMouse is released under the terms of the AGPLv3 or higher.
 
 import json
+import math
 import sys
 import time
 import os
@@ -11,6 +12,8 @@ from threading import Thread
 from UM.Event import MouseEvent, WheelEvent
 from UM.Extension import Extension
 from UM.Logger import Logger
+from UM.Math.Vector import Vector
+from UM.Math.Matrix import Matrix
 from UM.Message import Message
 from UM.Signal import Signal, signalemitter
 
@@ -57,6 +60,7 @@ class RawMouse(Extension, QObject,):
         self._battery_level = None
         self._message = Message(title=catalog.i18nc("@info:title", "RawMouse"))
         self._redraw_pending = False
+        self._roll = 0
 
         self.processTargetValues.connect(self._processTargetValues)
 
@@ -103,10 +107,16 @@ class RawMouse(Extension, QObject,):
             self._axis_threshold.append(axis_vals["threshold"])
             self._axis_scale.append(axis_vals["scale"])
             self._axis_offset.append(axis_vals["offset"])
+            target = ""
             if "target" in axis_vals:
-                self._axis_target.append(axis_vals["target"])
-            else:
-                self._axis_target.append("")
+                target = axis_vals["target"]
+                aliases = {
+                    "rotx": "rotyaw",
+                    "roty": "rotpitch"
+                }
+                if target in aliases:
+                    target = aliases[target]
+            self._axis_target.append(target)
             self._axis_value.append(0.0)
             Logger.log("d", "axis %d, scale = %f, threshold = %f, offset = %f, target = %s", i, self._axis_scale[i], self._axis_threshold[i], self._axis_offset[i], self._axis_target[i])
 
@@ -183,8 +193,9 @@ class RawMouse(Extension, QObject,):
         self._target_values = {
             "movx": 0.0,
             "movy": 0.0,
-            "rotx": 0.0,
-            "roty": 0.0,
+            "rotyaw": 0.0,
+            "rotpitch": 0.0,
+            "rotroll": 0.0,
             "zoom": 0.0,
             "resetview": None,
             "toggleview": None
@@ -195,6 +206,7 @@ class RawMouse(Extension, QObject,):
     def _processTargetValues(self):
         try:
             if self._target_values["resetview"]:
+                self._roll = 0
                 if self._controller:
                     self._controller.setCameraRotation(*self._target_values["resetview"])
             elif self._target_values["toggleview"]:
@@ -209,9 +221,9 @@ class RawMouse(Extension, QObject,):
                 if self._target_values["movx"] != 0.0 or self._target_values["movy"] != 0.0:
                     self._last_camera_update_at.start()
                     self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, self._target_values["movx"], self._target_values["movy"], 0, 0))
-                if self._target_values["rotx"] != 0 or self._target_values["roty"] != 0:
+                if self._target_values["rotyaw"] != 0 or self._target_values["rotpitch"] != 0  or self._target_values["rotroll"] != 0:
                     self._last_camera_update_at.start()
-                    self._camera_tool._rotateCamera(self._target_values["rotx"], self._target_values["roty"])
+                    self._rotateCamera(self._target_values["rotyaw"], self._target_values["rotpitch"], self._target_values["rotroll"])
                 if self._target_values["zoom"] != 0:
                     self._last_camera_update_at.start()
                     self._camera_tool._zoomCamera(self._target_values["zoom"])
@@ -339,3 +351,39 @@ class RawMouse(Extension, QObject,):
         self._message.hide()
         self._message.setText(catalog.i18nc("@info:status", str))
         self._message.show()
+
+    def _rotateCamera(self, yaw: float, pitch: float, roll: float) -> None:
+        camera = self._scene.getActiveCamera()
+        if not camera or not camera.isEnabled():
+            return
+
+        dyaw = math.radians(yaw * 180.0)
+        dpitch = math.radians(pitch * 180.0)
+        droll = math.radians(roll * 180.0)
+
+        diff = camera.getPosition() - self._camera_tool._origin
+
+        myaw = Matrix()
+        myaw.setByRotationAxis(dyaw, Vector.Unit_Y)
+
+        mpitch = Matrix(myaw.getData())
+        mpitch.rotateByAxis(dpitch, Vector.Unit_Y.cross(diff).normalized())
+
+        n = diff.multiply(mpitch)
+
+        try:
+            angle = math.acos(Vector.Unit_Y.dot(n.normalized()))
+        except ValueError:
+            return
+
+        if angle < 0.1 or angle > math.pi - 0.1:
+            n = diff.multiply(myaw)
+
+        n += self._camera_tool._origin
+
+        camera.setPosition(n)
+
+        self._roll += droll;
+        mroll = Matrix()
+        mroll.setByRotationAxis(self._roll, diff.normalized())
+        camera.lookAt(self._camera_tool._origin, Vector.Unit_Y.multiply(mroll))
