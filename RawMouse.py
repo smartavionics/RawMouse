@@ -51,6 +51,7 @@ class RawMouse(Extension, QObject,):
         self._camera_tool = None
 
         self.setMenuName(catalog.i18nc("@item:inmenu", "RawMouse"))
+        self.addMenuItem(catalog.i18nc("@item:inmenu", "Stop"), self._stop)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Restart"), self._restart)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Show Device Information"), self._showDeviceInformation)
 
