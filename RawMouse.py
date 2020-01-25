@@ -84,10 +84,7 @@ class RawMouse(Extension, QObject,):
     def _cacheProfileValues(self, profile_name):
         self._hid_profile_name = profile_name
         self._hid_profile = self._config["profiles"][profile_name]
-        if "maxhz" in self._config:
-            self._min_camera_update_period = 1000 / self._config["maxhz"]
-        else:
-            self._min_camera_update_period = 100
+        self._min_camera_update_period = 1000 / (int(self._config["maxhz"]) if "maxhz" in self._config else 30)
         if "verbose" in self._config:
             self._verbose = self._config["verbose"]
         else:

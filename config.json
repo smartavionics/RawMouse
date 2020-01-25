@@ -1,6 +1,6 @@
 
 {
-  "maxhz" : 20,
+  "maxhz" : 30,
   "verbose" : 0,
   "devices" : [
     [ "0x046d", "0xc603", "spacemouse", "3Dconnexion Spacemouse Plus XT" ],
