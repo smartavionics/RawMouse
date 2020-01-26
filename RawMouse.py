@@ -124,12 +124,12 @@ class RawMouse(Extension, QObject,):
             for hid_dev in hid.enumerate():
                 for known_dev in self._config["devices"]:
                     if hid_dev["vendor_id"] == int(known_dev[0], base = 16) and hid_dev["product_id"] == int(known_dev[1], base = 16):
-                        if sys.platform != "linux" and len(known_dev) > 4:
-                            if "usage_page" in known_dev[4]:
-                                if hid_dev["usage_page"] != known_dev[4]["usage_page"]:
+                        if len(known_dev) > 4:
+                            options = known_dev[4]
+                            if sys.platform != "linux":
+                                if "usage_page" in options and hid_dev["usage_page"] != options["usage_page"]:
                                     continue
-                            if "usage" in known_dev[4]:
-                                if hid_dev["usage"] != known_dev[4]["usage"]:
+                                if "usage" in options and hid_dev["usage"] != options["usage"]:
                                     continue
                         self._hid_dev = hid_dev
                         self._cacheProfileValues(known_dev[2])
