@@ -365,7 +365,7 @@ class RawMouse(Extension, QObject,):
         myaw.setByRotationAxis(dyaw, Vector.Unit_Y)
 
         mpitch = Matrix(myaw.getData())
-        mpitch.rotateByAxis(dpitch, Vector.Unit_Y.cross(diff).normalized())
+        mpitch.rotateByAxis(dpitch, Vector.Unit_Y.cross(diff))
 
         n = diff.multiply(mpitch)
 
