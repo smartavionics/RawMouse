@@ -381,7 +381,8 @@ class RawMouse(Extension, QObject,):
 
         camera.setPosition(n)
 
-        self._roll += droll;
+        if abs(self._roll + droll) < math.pi/2:
+            self._roll += droll;
         mroll = Matrix()
         mroll.setByRotationAxis(self._roll, diff.normalized())
         camera.lookAt(self._camera_tool._origin, Vector.Unit_Y.multiply(mroll))
