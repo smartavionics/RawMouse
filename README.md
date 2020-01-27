@@ -22,8 +22,6 @@ normal Spacemouse driver.
 
 Other programs cannot access the device while Cura is running.
 
-Currently, RawMouse simply translates the device's output into the equivalent input from the standard mouse. It does not provide any new modes of operation.
-
 ---
 
 ### Installation
