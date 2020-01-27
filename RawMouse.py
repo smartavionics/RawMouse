@@ -65,21 +65,23 @@ class RawMouse(Extension, QObject,):
 
         self.processTargetValues.connect(self._processTargetValues)
 
-        self._reload()
+        self._reload(False)
         self._start()
 
     def _restart(self):
         self._stop()
-        self._reload()
+        self._reload(True)
         self._start()
 
-    def _reload(self):
+    def _reload(self, restarted):
         self._config = {}
         try:
             with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.json"), "r", encoding = "utf-8") as f:
                 self._config = json.load(f)
         except Exception as e:
             Logger.log("e", "Exception loading configuration: %s", e)
+            if restarted:
+                self._showMessage("Exception loading configuration: " + str(e))
 
     def _cacheProfileValues(self, profile_name):
         self._hid_profile_name = profile_name
