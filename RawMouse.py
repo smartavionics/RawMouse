@@ -170,6 +170,7 @@ class RawMouse(Extension, QObject,):
 
             self._last_camera_update_at = QTime()
             self._last_camera_update_at.start()
+            self._xray_view = False
             while self._running:
                 if self._application is None:
                     self._application = CuraApplication.getInstance()
@@ -182,8 +183,12 @@ class RawMouse(Extension, QObject,):
                     self._main_window = self._application.getMainWindow()
                 d = h.read(64, 1000)
                 if self._main_window:
-                    if d and self._main_window.isActive():
-                        self._decoder(d)
+                    if d:
+                        if self._main_window.isActive():
+                            self._decoder(d)
+                    elif self._xray_view:
+                        self._controller.setActiveView("SimulationView")
+                        self._xray_view = False
                 else:
                     time.sleep(1.0)
             h.close()
@@ -208,6 +213,8 @@ class RawMouse(Extension, QObject,):
 
     def _processTargetValues(self):
         try:
+            modifiers = QtWidgets.QApplication.queryKeyboardModifiers()
+            ctrl_is_active = (modifiers & QtCore.Qt.ControlModifier) == QtCore.Qt.ControlModifier
             if self._target_values["resetview"]:
                 self._roll = 0
                 if self._controller:
@@ -221,6 +228,13 @@ class RawMouse(Extension, QObject,):
                         self._controller.setActiveStage("PreviewStage")
                         self._controller.setActiveView("SimulationView")
             elif self._camera_tool and self._last_camera_update_at.elapsed() > self._min_camera_update_period:
+                if ctrl_is_active:
+                    if self._controller.getActiveStage().getPluginId() == "PreviewStage" and self._controller.getActiveView().getPluginId() != "XRayView":
+                        self._controller.setActiveView("XRayView")
+                        self._xray_view = True
+                elif self._xray_view:
+                    self._controller.setActiveView("SimulationView")
+                    self._xray_view = False
                 if self._target_values["movx"] != 0.0 or self._target_values["movy"] != 0.0:
                     self._last_camera_update_at.start()
                     self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, self._target_values["movx"], self._target_values["movy"], 0, 0))
