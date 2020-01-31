@@ -46,6 +46,7 @@ class RawMouse(Extension, QObject,):
         }
 
         self._application = None
+        self._main_window = None
         self._controller = None
         self._scene = None
         self._camera_tool = None
@@ -177,9 +178,11 @@ class RawMouse(Extension, QObject,):
                 elif self._camera_tool is None:
                     self._camera_tool = self._controller.getCameraTool()
                     self._scene = self._controller.getScene()
-                if self._application and not self._application.checkWindowMinimizedState():
-                    d = h.read(64, 1000)
-                    if d:
+                elif self._main_window is None:
+                    self._main_window = self._application.getMainWindow()
+                d = h.read(64, 1000)
+                if self._main_window:
+                    if d and self._main_window.isActive():
                         self._decoder(d)
                 else:
                     time.sleep(1.0)
