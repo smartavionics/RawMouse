@@ -17,10 +17,8 @@ This plugin can only be used with devices whose HID message protocol it knows ab
 and a Gravis Tiltpad (which I don't seriously expect anyone to try and use with Cura). If you have some other device that you would like to use and have a description of the
 HID messages it uses then it can be added.
 
-On all systems you need to disable any existing driver so that RawMouse can gain access to the device. On Windows, there is a *Stop 3DxWare* command that disables the
+On systems that have an existing driver installed, you may need to disable that driver so that RawMouse can gain access to the device. On Windows, there is a *Stop 3DxWare* command that disables the
 normal Spacemouse driver.
-
-Other programs cannot access the device while Cura is running.
 
 ---
 
@@ -117,6 +115,8 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 1.0.2 - fix Universal Receiver not working on Windows & MacOS.
 
 1.0.3 - implemented rotroll target and renamed rotx -> rotyaw and roty -> rotpitch.
+
+1.0.4 - now ignores HID device when Cura loses the focus.
 
 ---
 
