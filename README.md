@@ -105,7 +105,7 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 ### Known Issues
 
 * Complex models can be slow to move when the preview screen is active but there's not much that can be done about that here. As of version 1.0.6, holding the CTRL key
-down while moving the layer view will switch to a faster simple shaded view for the duration of the move and then go back to the layer view when the movement finishes.
+ (CMD key on MacOS) down while moving the layer view will switch to a faster simple shaded view for the duration of the move and then go back to the layer view when the movement finishes.
 
 * The rotation motion is rather weird because it's still using the original 2D mouse code.
 
@@ -125,7 +125,7 @@ down while moving the layer view will switch to a faster simple shaded view for 
 
 1.0.5 - now ignores HID device when Cura loses the focus.
 
-1.0.6 - holding CTRL while moving the layer view displays a simple shaded view.
+1.0.6 - holding CTRL (CMD on MacOS) while moving the layer view displays a simple shaded view.
 
 1.0.7 - fixed yet another blunder with the Universal Receiver (3rd time lucky?)
 
