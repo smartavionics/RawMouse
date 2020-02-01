@@ -127,5 +127,7 @@ down while moving the layer view will switch to a faster simple shaded view for 
 
 1.0.6 - holding CTRL while moving the layer view displays a simple shaded view.
 
+1.0.7 - fixed yet another blunder with the Universal Receiver (3rd time lucky?)
+
 ---
 
