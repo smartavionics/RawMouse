@@ -58,6 +58,10 @@ The configuration file elements are:
 
 **maxhz** max number of screen updates per second
 
+**fastview** set to non-zero to automatically switch to the fast view when moving the layer view
+
+**verbose** set to non-zero to increase logging verbosity
+
 **devices** is an array of device definitions, one for each supported device. Each definition is an array whose elements specify the vendor and product USB ids
  for the device, the name of the device profile to use and a description. Optionally, an extra dictionary of additional values can be specified.
  Currently, only *usage_page* and *usage* values are recognised and they are used to select a particular HID interface when the device presents multiple interfaces.
@@ -101,7 +105,7 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 ### Known Issues
 
 * Complex models can be slow to move when the preview screen is active but there's not much that can be done about that here. As of version 1.0.6, holding the CTRL key
-down while moving the layer view will switch to X-ray view for the duration of the move and then go back to the layer view when the movement finishes.
+down while moving the layer view will switch to a faster simple shaded view for the duration of the move and then go back to the layer view when the movement finishes.
 
 * The rotation motion is rather weird because it's still using the original 2D mouse code.
 
@@ -121,7 +125,7 @@ down while moving the layer view will switch to X-ray view for the duration of t
 
 1.0.5 - now ignores HID device when Cura loses the focus.
 
-1.0.6 - Holding CTRL while moving the layer view displays X-ray view (for speed).
+1.0.6 - holding CTRL while moving the layer view displays a simple shaded view.
 
 ---
 

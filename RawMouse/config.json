@@ -1,0 +1,59 @@
+
+{
+  "maxhz" : 30,
+  "fastview" : 0,
+  "verbose" : 0,
+  "devices" : [
+    [ "0x046d", "0xc603", "spacemouse", "3Dconnexion Spacemouse Plus XT" ],
+    [ "0x046d", "0xc605", "spacemouse", "3Dconnexion CADman" ],
+    [ "0x046d", "0xc606", "spacemouse", "3Dconnexion Spacemouse Classic" ],
+    [ "0x046d", "0xc621", "spacemouse", "3Dconnexion Spaceball 5000" ],
+    [ "0x046d", "0xc623", "spacemouse", "3Dconnexion Space Traveller 3D Mouse" ],
+    [ "0x046d", "0xc625", "spacemouse", "3Dconnexion Space Pilot 3D Mouse" ],
+    [ "0x046d", "0xc626", "spacemouse", "3Dconnexion Space Navigator 3D Mouse" ],
+    [ "0x046d", "0xc627", "spacemouse", "3Dconnexion Space Explorer 3D Mouse" ],
+    [ "0x046d", "0xc628", "spacemouse", "3Dconnexion Space Navigator for Notebooks" ],
+    [ "0x046d", "0xc629", "spacemouse", "3Dconnexion SpacePilot Pro 3D Mouse" ],
+    [ "0x046d", "0xc62b", "spacemouse", "3Dconnexion Space Mouse Pro" ],
+    [ "0x256f", "0xc62e", "spacemouse", "3Dconnexion Space Mouse Wireless (cabled)" ],
+    [ "0x256f", "0xc62f", "spacemouse", "3Dconnexion Space Mouse Wireless" ],
+    [ "0x256f", "0xc631", "spacemouse", "3Dconnexion Space Mouse Pro Wireless (cabled)" ],
+    [ "0x256f", "0xc632", "spacemouse", "3Dconnexion Space Mouse Pro Wireless" ],
+    [ "0x256f", "0xc635", "spacemouse", "3Dconnexion Space Mouse Compact" ],
+    [ "0x256f", "0xc652", "spacemouse", "3Dconnexion Space Mouse Universal Receiver", { "usage_page": 1, "usage": 8 } ],
+    [ "0x256f", "0xc652", "spacemouse", "3Dconnexion Space Mouse Universal Receiver", { "usage_page": 65280, "usage": 65280 } ],
+
+    [ "0x047d", "0x4008", "tiltpad", "Kensington Gravis Destroyer TiltPad" ]
+  ],
+  "profiles" : {
+    "spacemouse" : {
+      "axes" : [
+        { "offset": 0.0, "scale": -0.1, "threshold": 0.01, "target": "movx" },
+        { "offset": 0.0, "scale": -100.0, "threshold": 1.0, "target": "zoom" },
+        { "offset": 0.0, "scale": -0.1, "threshold": 0.01, "target": "movy" },
+        { "offset": 0.0, "scale": -0.05 , "threshold": 0.01, "target": "rotpitch" },
+        { "offset": 0.0, "scale": -0.05, "threshold": 0.01, "target": "rotroll" },
+        { "offset": 0.0, "scale":  0.1, "threshold": 0.01, "target": "rotyaw" }
+      ],
+      "buttons" : {
+        "1": { "value": [ "3d" ], "target": "resetview" },
+        "2": { "value": 1,        "target": "toggleview" }
+      }
+    },
+    "tiltpad" : {
+      "axes" : [
+        { "offset": 0.0, "scale": -0.003, "threshold": 0.05, "target": "movx" },
+        { "offset": 0.0, "scale": -0.003, "threshold": 0.05, "target": "movy" }
+      ],
+      "buttons" : {
+        "0x01": { "value": 0.01, "target": "rotx" },
+        "0x04": { "value": -0.01, "target": "rotx" },
+        "0x08": { "value": 0.01, "target": "roty" },
+        "0x02": { "value": -0.01, "target": "roty" },
+        "0x10": { "value": -100, "target": "zoom" },
+        "0x20": { "value": 100, "target": "zoom" },
+        "0x30": { "value": [ "3d" ], "target": "resetview" }
+      }
+    }
+  }
+}

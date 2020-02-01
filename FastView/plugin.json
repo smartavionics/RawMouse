@@ -1,0 +1,8 @@
+{
+    "name": "Fast View",
+    "author": "Ultimaker B.V. + burtoogle",
+    "version": "1.0.1",
+    "description": "Provides a simple solid mesh view.",
+    "api": "7.0",
+    "i18n-catalog": "uranium"
+}
