@@ -6,6 +6,7 @@ import math
 import sys
 import time
 import os
+import platform
 
 from threading import Thread
 
@@ -133,11 +134,12 @@ class RawMouse(Extension, QObject,):
                     if hid_dev["vendor_id"] == int(known_dev[0], base = 16) and hid_dev["product_id"] == int(known_dev[1], base = 16):
                         if len(known_dev) > 4:
                             options = known_dev[4]
-                            if sys.platform != "linux":
-                                if "usage_page" in options and hid_dev["usage_page"] != options["usage_page"]:
-                                    continue
-                                if "usage" in options and hid_dev["usage"] != options["usage"]:
-                                    continue
+                            if "platform" in options and platform.system() != options["platform"]:
+                                continue
+                            if "usage_page" in options and hid_dev["usage_page"] != options["usage_page"]:
+                                continue
+                            if "usage" in options and hid_dev["usage"] != options["usage"]:
+                                continue
                         self._hid_dev = hid_dev
                         self._cacheProfileValues(known_dev[2])
                         break

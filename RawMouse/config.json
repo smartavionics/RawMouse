@@ -20,8 +20,12 @@
     [ "0x256f", "0xc631", "spacemouse", "3Dconnexion Space Mouse Pro Wireless (cabled)" ],
     [ "0x256f", "0xc632", "spacemouse", "3Dconnexion Space Mouse Pro Wireless" ],
     [ "0x256f", "0xc635", "spacemouse", "3Dconnexion Space Mouse Compact" ],
-    [ "0x256f", "0xc652", "spacemouse", "3Dconnexion Space Mouse Universal Receiver", { "usage_page": 1, "usage": 8 } ],
-    [ "0x256f", "0xc652", "spacemouse", "3Dconnexion Space Mouse Universal Receiver", { "usage_page": 65280, "usage": 65280 } ],
+    [ "0x256f", "0xc652", "spacemouse", "3Dconnexion Space Mouse Universal Receiver",
+      { "platform": "Linux" } ],
+    [ "0x256f", "0xc652", "spacemouse", "3Dconnexion Space Mouse Universal Receiver",
+      { "platform": "Windows", "usage_page": 1, "usage": 8 } ],
+    [ "0x256f", "0xc652", "spacemouse", "3Dconnexion Space Mouse Universal Receiver",
+      { "platform": "Darwin", "usage_page": 65280, "usage": 65280 } ],
 
     [ "0x047d", "0x4008", "tiltpad", "Kensington Gravis Destroyer TiltPad" ]
   ],
