@@ -64,7 +64,7 @@ The configuration file elements are:
 
 **devices** is an array of device definitions, one for each supported device. Each definition is an array whose elements specify the vendor and product USB ids
  for the device, the name of the device profile to use and a description. Optionally, an extra dictionary of additional values can be specified.
- Currently, only *usage_page* and *usage* values are recognised and they are used to select a particular HID interface when the device presents multiple interfaces.
+ Currently, only *platform*, *usage_page* and *usage* values are recognised and they are used to select a particular HID interface when the device presents multiple interfaces.
 
 **profiles** is dictionary of profile definitions. Each profile definition defines the axes and buttons the profile knows about.
 
@@ -78,13 +78,12 @@ change the sign.
 **threshold** is the minimum value an axis must have before it has any effect.
 
 **target** is the name of the function that will be invoked when the axis value is greater than the threshold.
- Current target names are: "movx", "movy", "rotx", "roty" and "zoom".
+ Current target names are: "movx", "movy", "zoom", "rotpitch", "rotroll" and "rotyaw".
 
 **buttons** is a dictionary of button definitions. The element keys are strings that match the button state and the value is a dictionary that specifies *value* and and *target* for the button.
 When a button is activated, the specified target function is passed the value.
 
-The Spacemice are configured so that button 1 resets the view (useful when you get lost in space) and button 2 toggles between the Cura prepare and preview screens which
-is useful if the preview screen is slow to render as you can quickly switch to the prepare screen, manoeuvre, and then switch back to the preview screen.
+The Spacemice are configured so that button 1 resets the view (useful when you get lost in space) and button 2 toggles between the Cura prepare and preview screens.
 
 ---
 
