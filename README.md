@@ -128,5 +128,7 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 
 1.0.7 - fixed yet another blunder with the Universal Receiver (3rd time lucky?)
 
+1.0.8 - minor tweaks, added Space Mouse Enterprise device.
+
 ---
 
