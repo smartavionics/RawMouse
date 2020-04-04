@@ -9,6 +9,8 @@ Primarily intended for use on Linux (tested on Ubuntu 16.04.6), it does also wor
 
 The plugin includes binary components (cython-hidapi) that are required to access USB devices.
 
+On Linux and MacOS, RawMouse can also access spacemice using the libspnav library if that is installed on the system.
+
 ---
 
 ### Limitations
@@ -61,6 +63,8 @@ The configuration file elements are:
 **fastview** set to non-zero to automatically switch to the fast view when moving the layer view
 
 **verbose** set to non-zero to increase logging verbosity
+
+**libspnav** on Linux and MacOS, this can be set to the pathname of the libspnav dynamic library. Devices accessed using this library will use the *libspnav* profile.
 
 **devices** is an array of device definitions, one for each supported device. Each definition is an array whose elements specify the vendor and product USB ids
  for the device, the name of the device profile to use and a description. Optionally, an extra dictionary of additional values can be specified.
@@ -129,6 +133,8 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 1.0.7 - fixed yet another blunder with the Universal Receiver (3rd time lucky?)
 
 1.0.8 - minor tweaks, added Space Mouse Enterprise device.
+
+1.0.9 - added support for libspnav (Linux and MacOS only).
 
 ---
 
