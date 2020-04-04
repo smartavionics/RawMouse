@@ -6,7 +6,10 @@ import math
 import sys
 import time
 import os
+import os.path
 import platform
+
+from ctypes import *
 
 from threading import Thread
 
@@ -34,6 +37,8 @@ elif sys.platform == "darwin":
     sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hidapi", "hidapi-0.9.0-py3.5-macosx-10.13-intel.egg"))
 import hid
 del sys.path[-1]
+
+libspnav = None
 
 @signalemitter
 class RawMouse(Extension, QObject,):
@@ -107,7 +112,8 @@ class RawMouse(Extension, QObject,):
         else:
             self._decoder = self._decodeUnknownEvent
         hid_profile_axes = self._hid_profile["axes"]
-        Logger.log("d", "Device %s / %s, profile %s", self._hid_dev["manufacturer_string"], self._hid_dev["product_string"], self._hid_profile_name);
+        if self._hid_dev is not None:
+            Logger.log("d", "Device %s / %s, profile %s", self._hid_dev["manufacturer_string"], self._hid_dev["product_string"], self._hid_profile_name);
         for i in range(0, len(hid_profile_axes)):
             axis_vals = hid_profile_axes[i]
             self._axis_threshold.append(axis_vals["threshold"])
@@ -153,6 +159,22 @@ class RawMouse(Extension, QObject,):
             self._runner.start()
         else:
             Logger.log("w", "No known HID device found")
+            if "libspnav" in self._config and os.path.exists(self._config["libspnav"]):
+                Logger.log("d", "Trying libspnav")
+                global libspnav
+                if libspnav is None:
+                    try:
+                        libspnav = cdll.LoadLibrary(self._config["libspnav"])
+                        setup_libspnav_fns()
+                    except Exception as e:
+                        Logger.log("e", "Exception initialising libspnav: %s", e)
+                try:
+                    self._cacheProfileValues("libspnav")
+                except Exception as e:
+                    Logger.log("e", "Exception initialising profile: %s", e)
+                if libspnav is not None:
+                    self._runner = Thread(target = self._run_libspnav, daemon = True, name = "RawMouse")
+                    self._runner.start()
 
     def _stop(self):
         self._running = False
@@ -359,7 +381,9 @@ class RawMouse(Extension, QObject,):
         try:
             message = "No device found"
             if self._hid_dev:
-                message = "Manufacturer: " + self._hid_dev["manufacturer_string"] + "\nProduct: " + self._hid_dev["product_string"] + "\nProfile: " + self._hid_profile_name;
+                message = "Manufacturer: " + self._hid_dev["manufacturer_string"] + "\nProduct: " + self._hid_dev["product_string"] + "\nProfile: " + self._hid_profile_name;#
+            elif libspnav is not None:
+                message = "Using libspnav"
             if self._battery_level is not None:
                 message += "\nBattery level: " + str(self._battery_level) + "%"
             if self._hid_profile:
@@ -411,3 +435,171 @@ class RawMouse(Extension, QObject,):
         mroll = Matrix()
         mroll.setByRotationAxis(self._roll, (n - self._camera_tool._origin))
         camera.lookAt(self._camera_tool._origin, Vector.Unit_Y.multiply(mroll))
+
+    def _run_libspnav(self):
+        self._running = True
+        Logger.log("d", "Reading events from libspnav...")
+        try:
+            if spnavOpen() == False:
+                self._last_camera_update_at = QTime()
+                self._last_camera_update_at.start()
+                self._xray_view = False
+                while self._running:
+                    if self._application is None:
+                        self._application = CuraApplication.getInstance()
+                    elif self._controller is None:
+                        self._controller = self._application.getController()
+                    elif self._camera_tool is None:
+                        self._camera_tool = self._controller.getCameraTool()
+                        self._scene = self._controller.getScene()
+                    elif self._main_window is None:
+                        self._main_window = self._application.getMainWindow()
+                    event = spnavWaitEvent()
+                    if self._main_window:
+                        if event is not None:
+                            if self._main_window.isActive():
+                                if event.type == SPNAV_EVENT_MOTION:
+                                    scale = 1 / 500.0
+                                    self._spacemouseAxisEvent([
+                                        event.motion.x * scale * self._axis_scale[0] + self._axis_offset[0],
+                                        event.motion.y * scale * self._axis_scale[1] + self._axis_offset[1],
+                                        event.motion.z * scale * self._axis_scale[2] + self._axis_offset[2],
+                                        event.motion.rx * scale * self._axis_scale[3] + self._axis_offset[3],
+                                        event.motion.ry * scale * self._axis_scale[4] + self._axis_offset[4],
+                                        event.motion.rz * scale * self._axis_scale[5] + self._axis_offset[5]
+                                    ])
+                                elif event.type == SPNAV_EVENT_BUTTON:
+                                    self._spacemouseButtonEvent(event.button.bnum, event.button.press)
+                        elif self._xray_view:
+                            self._controller.setActiveView("SimulationView")
+                            self._xray_view = False
+                    else:
+                        time.sleep(1.0)
+                spnavClose()
+            else:
+                Logger.log("e", "spnavOpen() failed")
+        except Exception as e:
+            Logger.log("e", "Exception while reading libspnav events: %s", e)
+        self._running = False
+        self._runner = None
+
+# -----------------------------------------------------------------------------
+# Definitions for data structures of spnav library
+#
+# Copied from https://github.com/xythobuz/spacenav-plus, thanks!
+
+# enum {
+#     SPNAV_EVENT_ANY = 0,	/* used by spnav_remove_events() */
+#     SPNAV_EVENT_MOTION = 1,
+#     SPNAV_EVENT_BUTTON = 2	/* includes both press and release */
+# };
+(SPNAV_EVENT_ANY, SPNAV_EVENT_MOTION, SPNAV_EVENT_BUTTON) = (0, 1, 2)
+
+# struct spnav_event_motion {
+#     int type;
+#     int x, y, z;
+#     int rx, ry, rz;
+#     unsigned int period;
+#     int *data;
+# };
+class SpnavMotionEvent(Structure): pass
+SpnavMotionEvent._fields_ = [
+    ('type', c_int),
+    ('x', c_int),
+    ('y', c_int),
+    ('z', c_int),
+    ('rx', c_int),
+    ('ry', c_int),
+    ('rz', c_int),
+    ('period', c_uint),
+    ('data', POINTER(c_uint))
+]
+
+# struct spnav_event_button {
+#     int type;
+#     int press;
+#     int bnum;
+# };
+class SpnavButtonEvent(Structure): pass
+SpnavButtonEvent._fields_ = [
+    ('type', c_int),
+    ('press', c_int),
+    ('bnum', c_int)
+]
+
+# typedef union spnav_event {
+#     int type;
+#     struct spnav_event_motion motion;
+#     struct spnav_event_button button;
+# } spnav_event;
+class SpnavEvent(Union): pass
+SpnavEvent._fields_ = [
+    ('type', c_int),
+    ('motion', SpnavMotionEvent),
+    ('button', SpnavButtonEvent)
+]
+
+# -----------------------------------------------------------------------------
+# Actual python wrapper methods
+
+# Open connection to the daemon via AF_UNIX socket
+# Returns 'True' on error, 'False' on success
+def spnavOpen():
+    result = libspnav.spnav_open()
+    if result == -1:
+        return True
+    return False
+
+# Close connection to the daemon
+# Returns 'True' on error, 'False' on success
+def spnavClose():
+    result = libspnav.spnav_close()
+    if result == -1:
+        return True
+    return False
+
+# Blocks waiting for space-nav events
+# Returns 'None' on error or an event on success
+def spnavWaitEvent():
+    event = SpnavEvent(SPNAV_EVENT_ANY,
+                  SpnavMotionEvent(0, 0, 0, 0, 0, 0, 0, 0, None),
+                  SpnavButtonEvent(0, 0, 0))
+    result = libspnav.spnav_wait_event(byref(event))
+    if result == 0:
+        return None
+    return event
+
+# Checks for the availability of space-nav events (non-blocking)
+# Returns 'None' if no event available or an event on success
+def spnavPollEvent():
+    event = SpnavEvent(SPNAV_EVENT_ANY,
+                  SpnavMotionEvent(0, 0, 0, 0, 0, 0, 0, 0, None),
+                  SpnavButtonEvent(0, 0, 0))
+    result = libspnav.spnav_poll_event(byref(event))
+    if result == 0:
+        return None
+    return event
+
+# Removes any pending events from the specified type, or all pending
+# events if the type argument is SPNAV_EVENT_ANY. Returns the number
+# of removed events.
+def spnavRemoveEvents(eventType):
+    return libspnav.spnav_remove_events(eventType)
+
+def setup_libspnav_fns():
+    # int spnav_open(void);
+    libspnav.spnav_open.restype = c_int
+    #libspnav.spnav_open.argtypes = [None]
+    # int spnav_close(void);
+    libspnav.spnav_close.restype = c_int
+    #libspnav.spnav_close.argtypes = [None]
+    # int spnav_wait_event(spnav_event *event);
+    libspnav.spnav_wait_event.restype = c_int
+    libspnav.spnav_wait_event.argtypes = [POINTER(SpnavEvent)]
+    # int spnav_poll_event(spnav_event *event);
+    libspnav.spnav_poll_event.restype = c_int
+    libspnav.spnav_poll_event.argtypes = [POINTER(SpnavEvent)]
+    # int spnav_remove_events(int type);
+    libspnav.spnav_remove_events.restype = c_int
+    libspnav.spnav_remove_events.argtypes = [c_int]
+

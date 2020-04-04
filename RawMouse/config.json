@@ -3,6 +3,7 @@
   "maxhz" : 30,
   "fastview" : 0,
   "verbose" : 0,
+  "libspnav" : "/usr/local/lib/libspnav.so",
   "devices" : [
     [ "0x046d", "0xc603", "spacemouse", "3Dconnexion Spacemouse Plus XT" ],
     [ "0x046d", "0xc605", "spacemouse", "3Dconnexion CADman" ],
@@ -43,6 +44,20 @@
       "buttons" : {
         "1": { "value": [ "3d" ], "target": "resetview" },
         "2": { "value": 1,        "target": "toggleview" }
+      }
+    },
+    "libspnav" : {
+      "axes" : [
+        { "offset": 0.0, "scale": -0.1, "threshold": 0.01, "target": "movx" },
+        { "offset": 0.0, "scale": 0.1, "threshold": 0.01, "target": "movy" },
+        { "offset": 0.0, "scale": 100.0, "threshold": 1.0, "target": "zoom" },
+        { "offset": 0.0, "scale": -0.05 , "threshold": 0.01, "target": "rotpitch" },
+        { "offset": 0.0, "scale": 0.1, "threshold": 0.01, "target": "rotyaw" },
+        { "offset": 0.0, "scale": 0.05, "threshold": 0.01, "target": "rotroll" }
+      ],
+      "buttons" : {
+        "0": { "value": [ "3d" ], "target": "resetview" },
+        "1": { "value": 1,        "target": "toggleview" }
       }
     },
     "tiltpad" : {
