@@ -9,7 +9,7 @@ Primarily intended for use on Linux (tested on Ubuntu 16.04.6), it does also wor
 
 The plugin includes binary components (cython-hidapi) that are required to access USB devices.
 
-On Linux and MacOS, RawMouse can also access spacemice using the libspnav library if that is installed on the system.
+On Linux and MacOS, as an alternative to accessing HID devices, RawMouse can use the libspnav library to access spacemice if that is installed on the system.
 
 ---
 
@@ -64,11 +64,10 @@ The configuration file elements are:
 
 **verbose** set to non-zero to increase logging verbosity
 
-**libspnav** on Linux and MacOS, this can be set to the pathname of the libspnav dynamic library. Devices accessed using this library will use the *libspnav* profile.
-
 **devices** is an array of device definitions, one for each supported device. Each definition is an array whose elements specify the vendor and product USB ids
  for the device, the name of the device profile to use and a description. Optionally, an extra dictionary of additional values can be specified.
- Currently, only *platform*, *usage_page* and *usage* values are recognised and they are used to select a particular HID interface when the device presents multiple interfaces.
+ Currently, only *platform*, *usage_page* and *usage* values are recognised and they are used to select a particular HID interface when the device
+ presents multiple interfaces. This element is not required if libspnav is used to access a spacemouse.
 
 **profiles** is dictionary of profile definitions. Each profile definition defines the axes and buttons the profile knows about.
 
@@ -86,6 +85,8 @@ change the sign.
 
 **buttons** is a dictionary of button definitions. The element keys are strings that match the button state and the value is a dictionary that specifies *value* and and *target* for the button.
 When a button is activated, the specified target function is passed the value.
+
+**libspnav** on Linux and MacOS, this can be set to the pathname of the libspnav dynamic library. Devices accessed using this library will use the *libspnav* profile.
 
 The Spacemice are configured so that button 1 resets the view (useful when you get lost in space) and button 2 toggles between the Cura prepare and preview screens.
 
