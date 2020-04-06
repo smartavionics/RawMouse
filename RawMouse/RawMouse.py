@@ -29,15 +29,6 @@ from PyQt5 import QtCore, QtWidgets
 from UM.i18n import i18nCatalog
 catalog = i18nCatalog("cura")
 
-if sys.platform == "linux":
-    sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hidapi", "hidapi-0.9.0-py3.5-linux-" + os.uname()[4] + ".egg"))
-elif sys.platform == "win32":
-    sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hidapi", "hidapi-0.9.0-py3.5-win-amd64.egg"))
-elif sys.platform == "darwin":
-    sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hidapi", "hidapi-0.9.0-py3.5-macosx-10.13-intel.egg"))
-import hid
-del sys.path[-1]
-
 libspnav = None
 
 @signalemitter
@@ -69,11 +60,23 @@ class RawMouse(Extension, QObject,):
         self._message = Message(title=catalog.i18nc("@info:title", "RawMouse"))
         self._redraw_pending = False
         self._roll = 0
+        self._hidapi = None
 
         self.processTargetValues.connect(self._processTargetValues)
 
         self._reload(False)
         self._start()
+
+    def _getComponents(self):
+        if self._application is None:
+            self._application = CuraApplication.getInstance()
+        elif self._controller is None:
+            self._controller = self._application.getController()
+        elif self._camera_tool is None:
+            self._camera_tool = self._controller.getCameraTool()
+            self._scene = self._controller.getScene()
+        elif self._main_window is None:
+            self._main_window = self._application.getMainWindow()
 
     def _restart(self):
         self._stop()
@@ -91,8 +94,8 @@ class RawMouse(Extension, QObject,):
                 self._showMessage("Exception loading configuration: " + str(e))
 
     def _cacheProfileValues(self, profile_name):
-        self._hid_profile_name = profile_name
-        self._hid_profile = self._config["profiles"][profile_name]
+        self._profile_name = profile_name
+        self._profile = self._config["profiles"][profile_name]
         self._min_camera_update_period = 1000 / (int(self._config["maxhz"]) if "maxhz" in self._config else 30)
         if "verbose" in self._config:
             self._verbose = self._config["verbose"]
@@ -107,13 +110,13 @@ class RawMouse(Extension, QObject,):
         self._axis_offset = []
         self._axis_target = []
         self._axis_value = []
-        if self._hid_profile_name in self._decoders:
-            self._decoder = self._decoders[self._hid_profile_name]
+        if self._profile_name in self._decoders:
+            self._decoder = self._decoders[self._profile_name]
         else:
             self._decoder = self._decodeUnknownEvent
-        hid_profile_axes = self._hid_profile["axes"]
+        hid_profile_axes = self._profile["axes"]
         if self._hid_dev is not None:
-            Logger.log("d", "Device %s / %s, profile %s", self._hid_dev["manufacturer_string"], self._hid_dev["product_string"], self._hid_profile_name);
+            Logger.log("d", "Device %s / %s, profile %s", self._hid_dev["manufacturer_string"], self._hid_dev["product_string"], self._profile_name);
         for i in range(0, len(hid_profile_axes)):
             axis_vals = hid_profile_axes[i]
             self._axis_threshold.append(axis_vals["threshold"])
@@ -134,57 +137,69 @@ class RawMouse(Extension, QObject,):
 
     def _start(self):
         self._hid_dev = None
-        try:
-            for hid_dev in hid.enumerate():
-                for known_dev in self._config["devices"]:
-                    if hid_dev["vendor_id"] == int(known_dev[0], base = 16) and hid_dev["product_id"] == int(known_dev[1], base = 16):
-                        if len(known_dev) > 4:
-                            options = known_dev[4]
-                            if "platform" in options and platform.system() != options["platform"]:
-                                continue
-                            if "usage_page" in options and hid_dev["usage_page"] != options["usage_page"]:
-                                continue
-                            if "usage" in options and hid_dev["usage"] != options["usage"]:
-                                continue
-                        self._hid_dev = hid_dev
-                        self._cacheProfileValues(known_dev[2])
+        if "devices" in self._config:
+            try:
+                if self._hidapi is None:
+                    if sys.platform == "linux":
+                        sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hidapi", "hidapi-0.9.0-py3.5-linux-" + os.uname()[4] + ".egg"))
+                    elif sys.platform == "win32":
+                        sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hidapi", "hidapi-0.9.0-py3.5-win-amd64.egg"))
+                    elif sys.platform == "darwin":
+                        sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hidapi", "hidapi-0.9.0-py3.5-macosx-10.13-intel.egg"))
+                    import hid
+                    self._hidapi = hid
+                    del sys.path[-1]
+
+                for hid_dev in self._hidapi.enumerate():
+                    for known_dev in self._config["devices"]:
+                        if hid_dev["vendor_id"] == int(known_dev[0], base = 16) and hid_dev["product_id"] == int(known_dev[1], base = 16):
+                            if len(known_dev) > 4:
+                                options = known_dev[4]
+                                if "platform" in options and platform.system() != options["platform"]:
+                                    continue
+                                if "usage_page" in options and hid_dev["usage_page"] != options["usage_page"]:
+                                    continue
+                                if "usage" in options and hid_dev["usage"] != options["usage"]:
+                                    continue
+                            self._hid_dev = hid_dev
+                            self._cacheProfileValues(known_dev[2])
+                            break
+                    if self._hid_dev:
                         break
-                if self._hid_dev:
-                    break
-        except Exception as e:
-            Logger.log("e", "Exception initialising profile: %s", e)
+            except Exception as e:
+                Logger.log("e", "Exception initialising profile: %s", e)
 
         if self._hid_dev:
-            self._runner = Thread(target = self._run, daemon = True, name = "RawMouse")
+            self._runner = Thread(target = self._run_hid, daemon = True, name = "RawMouse")
             self._runner.start()
-        else:
-            Logger.log("w", "No known HID device found")
-            if "libspnav" in self._config and os.path.exists(self._config["libspnav"]):
-                Logger.log("d", "Trying libspnav")
-                global libspnav
-                if libspnav is None:
-                    try:
-                        libspnav = cdll.LoadLibrary(self._config["libspnav"])
-                        setup_libspnav_fns()
-                    except Exception as e:
-                        Logger.log("e", "Exception initialising libspnav: %s", e)
+        elif "libspnav" in self._config and os.path.exists(self._config["libspnav"]):
+            Logger.log("d", "Trying libspnav...")
+            global libspnav
+            if libspnav is None:
                 try:
-                    self._cacheProfileValues("libspnav")
+                    libspnav = cdll.LoadLibrary(self._config["libspnav"])
+                    setup_libspnav_fns()
                 except Exception as e:
-                    Logger.log("e", "Exception initialising profile: %s", e)
-                if libspnav is not None:
-                    self._runner = Thread(target = self._run_libspnav, daemon = True, name = "RawMouse")
-                    self._runner.start()
+                    Logger.log("e", "Exception initialising libspnav: %s", e)
+            try:
+                self._cacheProfileValues("libspnav")
+            except Exception as e:
+                Logger.log("e", "Exception initialising profile: %s", e)
+            if libspnav is not None:
+                self._runner = Thread(target = self._run_libspnav, daemon = True, name = "RawMouse")
+                self._runner.start()
+        if self._runner is None:
+            Logger.log("w", "No mouse found!")
 
     def _stop(self):
         self._running = False
         while self._runner:
             self._runner.join(timeout = 2.0)
 
-    def _run(self):
+    def _run_hid(self):
         self._running = True
         try:
-            h = hid.device()
+            h = self._hidapi.device()
             if self._hid_dev["path"]:
                 Logger.log("d", "Trying to open %s", self._hid_dev["path"].decode("utf-8"))
                 h.open_path(self._hid_dev["path"])
@@ -198,27 +213,18 @@ class RawMouse(Extension, QObject,):
 
             self._last_camera_update_at = QTime()
             self._last_camera_update_at.start()
-            self._xray_view = False
+            self._fast_view = False
             while self._running:
-                if self._application is None:
-                    self._application = CuraApplication.getInstance()
-                elif self._controller is None:
-                    self._controller = self._application.getController()
-                elif self._camera_tool is None:
-                    self._camera_tool = self._controller.getCameraTool()
-                    self._scene = self._controller.getScene()
-                elif self._main_window is None:
-                    self._main_window = self._application.getMainWindow()
                 d = h.read(64, 1000)
                 if self._main_window:
                     if d:
                         if self._main_window.isActive():
                             self._decoder(d)
-                    elif self._xray_view:
+                    elif self._fast_view:
                         self._controller.setActiveView("SimulationView")
-                        self._xray_view = False
+                        self._fast_view = False
                 else:
-                    time.sleep(1.0)
+                    self._getComponents()
             h.close()
         except Exception as e:
             Logger.log("e", "Exception while reading HID events: %s", e)
@@ -259,10 +265,10 @@ class RawMouse(Extension, QObject,):
                 if self._fastview or ctrl_is_active:
                     if self._controller.getActiveStage().getPluginId() == "PreviewStage" and self._controller.getActiveView().getPluginId() != "FastView":
                         self._controller.setActiveView("FastView")
-                        self._xray_view = True
-                elif self._xray_view:
+                        self._fast_view = True
+                elif self._fast_view:
                     self._controller.setActiveView("SimulationView")
-                    self._xray_view = False
+                    self._fast_view = False
                 if self._target_values["movx"] != 0.0 or self._target_values["movy"] != 0.0:
                     self._last_camera_update_at.start()
                     self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, self._target_values["movx"], self._target_values["movy"], 0, 0))
@@ -322,7 +328,7 @@ class RawMouse(Extension, QObject,):
         if process:
             if not self._redraw_pending:
                 self._redraw_pending = True
-                self.processTargetValues.emit();
+                self.processTargetValues.emit()
 
     def _spacemouseButtonEvent(self, button, val):
         if self._verbose > 0:
@@ -330,7 +336,7 @@ class RawMouse(Extension, QObject,):
         if val == 1:
             self._initTargetValues();
             process = False
-            button_defs = self._hid_profile["buttons"]
+            button_defs = self._profile["buttons"]
             for b in button_defs:
                 if button == int(b):
                     self._target_values[button_defs[b]["target"]] = button_defs[b]["value"]
@@ -355,7 +361,7 @@ class RawMouse(Extension, QObject,):
                 process = True
         buttons = buf[3] & 0x7f
         if buttons != 0:
-            button_defs = self._hid_profile["buttons"]
+            button_defs = self._profile["buttons"]
             for b in button_defs:
                 if buttons == int(b, base = 16):
                     self._target_values[button_defs[b]["target"]] = button_defs[b]["value"]
@@ -363,7 +369,7 @@ class RawMouse(Extension, QObject,):
         if process:
             if not self._redraw_pending:
                 self._redraw_pending = True
-                self.processTargetValues.emit();
+                self.processTargetValues.emit()
 
     def _decodeUnknownEvent(self, buf):
         Logger.log("d", "Unknown event: len = %d [0] = %x", len(buf), buf[0])
@@ -371,7 +377,7 @@ class RawMouse(Extension, QObject,):
     def _getScalingDueToZoom(self):
         scale = 1.0
         if self._scene:
-            zoom_factor = self._scene.getActiveCamera().getZoomFactor();
+            zoom_factor = self._scene.getActiveCamera().getZoomFactor()
             if zoom_factor < -0.4:
                 scale = 0.1 + 9 * (zoom_factor - -0.5)
                 #Logger.log("d", "scale = %f", scale)
@@ -381,12 +387,12 @@ class RawMouse(Extension, QObject,):
         try:
             message = "No device found"
             if self._hid_dev:
-                message = "Manufacturer: " + self._hid_dev["manufacturer_string"] + "\nProduct: " + self._hid_dev["product_string"] + "\nProfile: " + self._hid_profile_name;#
+                message = "Manufacturer: " + self._hid_dev["manufacturer_string"] + "\nProduct: " + self._hid_dev["product_string"] + "\nProfile: " + self._profile_name
             elif libspnav is not None:
                 message = "Using libspnav"
             if self._battery_level is not None:
                 message += "\nBattery level: " + str(self._battery_level) + "%"
-            if self._hid_profile:
+            if self._profile:
                 message += "\nAxes:"
                 for i in range(0, len(self._axis_scale)):
                     message += "\n [" + str(i) + "] scale " + str(self._axis_scale[i]) + " threshold " + str(self._axis_threshold[i]) + " offset " + str(self._axis_offset[i]) + " -> " + self._axis_target[i]
@@ -443,22 +449,17 @@ class RawMouse(Extension, QObject,):
             if spnavOpen() == False:
                 self._last_camera_update_at = QTime()
                 self._last_camera_update_at.start()
-                self._xray_view = False
+                self._fast_view = False
                 while self._running:
-                    if self._application is None:
-                        self._application = CuraApplication.getInstance()
-                    elif self._controller is None:
-                        self._controller = self._application.getController()
-                    elif self._camera_tool is None:
-                        self._camera_tool = self._controller.getCameraTool()
-                        self._scene = self._controller.getScene()
-                    elif self._main_window is None:
-                        self._main_window = self._application.getMainWindow()
-                    event = spnavWaitEvent()
                     if self._main_window:
+                        event = spnavWaitEvent()
                         if event is not None:
                             if self._main_window.isActive():
                                 if event.type == SPNAV_EVENT_MOTION:
+                                    if event.motion.x == 0 and event.motion.y == 0 and event.motion.z == 0 and event.motion.rx == 0 and event.motion.ry == 0 and event.motion.rz == 0:
+                                        if self._fast_view:
+                                            self._controller.setActiveView("SimulationView")
+                                            self._fast_view = False
                                     scale = 1 / 500.0
                                     self._spacemouseAxisEvent([
                                         event.motion.x * scale * self._axis_scale[0] + self._axis_offset[0],
@@ -470,11 +471,9 @@ class RawMouse(Extension, QObject,):
                                     ])
                                 elif event.type == SPNAV_EVENT_BUTTON:
                                     self._spacemouseButtonEvent(event.button.bnum, event.button.press)
-                        elif self._xray_view:
-                            self._controller.setActiveView("SimulationView")
-                            self._xray_view = False
                     else:
-                        time.sleep(1.0)
+                        self._getComponents()
+                        time.sleep(0.1)
                 spnavClose()
             else:
                 Logger.log("e", "spnavOpen() failed")
