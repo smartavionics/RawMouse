@@ -66,8 +66,9 @@ The configuration file elements are:
 
 **devices** is an array of device definitions, one for each supported device. Each definition is an array whose elements specify the vendor and product USB ids
  for the device, the name of the device profile to use and a description. Optionally, an extra dictionary of additional values can be specified.
- Currently, only *platform*, *usage_page* and *usage* values are recognised and they are used to select a particular HID interface when the device
- presents multiple interfaces. This element is not required if libspnav is used to access a spacemouse.
+ Currently, *platform*, *usage_page*, *usage* and *interface_number* values are recognised and they are used to select a particular HID device/interface when the device
+ presents multiple interfaces. By default, *interface_number* is not required but you may need to add this if you are using a wireless receiver that is paired with multiple devices.
+ This configuration file element (devices) is not required if libspnav is used to access a spacemouse.
 
 **profiles** is dictionary of profile definitions. Each profile definition defines the axes and buttons the profile knows about.
 
