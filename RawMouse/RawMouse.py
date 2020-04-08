@@ -161,7 +161,10 @@ class RawMouse(Extension, QObject,):
                                     continue
                                 if "usage" in options and hid_dev["usage"] != options["usage"]:
                                     continue
+                                if "interface_number" in options and hid_dev["interface_number"] != options["interface_number"]:
+                                    continue
                             self._hid_dev = hid_dev
+                            Logger.log("d", "Found HID device with vendor_id = %x, product_id = %x, interface_number = %x", self._hid_dev["vendor_id"], self._hid_dev["product_id"], self._hid_dev["interface_number"])
                             self._cacheProfileValues(known_dev[2])
                             break
                     if self._hid_dev:
