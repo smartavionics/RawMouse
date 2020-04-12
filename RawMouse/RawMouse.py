@@ -102,9 +102,9 @@ class RawMouse(Extension, QObject,):
         else:
             self._verbose = 0
         if "fastview" in self._config:
-            self._fastview = self._config["fastview"]
+            self._auto_fast_view = self._config["fastview"]
         else:
-            self._fastview = 0
+            self._auto_fast_view = 0
         self._axis_threshold = []
         self._axis_scale = []
         self._axis_offset = []
@@ -265,7 +265,7 @@ class RawMouse(Extension, QObject,):
                         self._controller.setActiveStage("PreviewStage")
                         self._controller.setActiveView("SimulationView")
             elif self._camera_tool and self._last_camera_update_at.elapsed() > self._min_camera_update_period:
-                if self._fastview or ctrl_is_active:
+                if self._auto_fast_view or ctrl_is_active:
                     if self._controller.getActiveStage().getPluginId() == "PreviewStage" and self._controller.getActiveView().getPluginId() != "FastView":
                         self._controller.setActiveView("FastView")
                         self._fast_view = True
