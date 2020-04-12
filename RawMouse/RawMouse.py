@@ -182,6 +182,7 @@ class RawMouse(Extension, QObject,):
                 try:
                     libspnav = cdll.LoadLibrary(self._config["libspnav"])
                     setup_libspnav_fns()
+                    Logger.log("d", "Initialised libspnav")
                 except Exception as e:
                     Logger.log("e", "Exception initialising libspnav: %s", e)
             try:
@@ -218,8 +219,8 @@ class RawMouse(Extension, QObject,):
             self._last_camera_update_at.start()
             self._fast_view = False
             while self._running:
-                d = h.read(64, 1000)
                 if self._main_window:
+                    d = h.read(64, 1000)
                     if d:
                         if self._main_window.isActive():
                             self._decoder(d)
@@ -228,6 +229,7 @@ class RawMouse(Extension, QObject,):
                         self._fast_view = False
                 else:
                     self._getComponents()
+                    time.sleep(0.1)
             h.close()
         except Exception as e:
             Logger.log("e", "Exception while reading HID events: %s", e)
