@@ -110,6 +110,7 @@ class RawMouse(Extension, QObject,):
         self._axis_offset = []
         self._axis_target = []
         self._axis_value = []
+        self._layer_change_increment = 1
         if self._profile_name in self._decoders:
             self._decoder = self._decoders[self._profile_name]
         else:
@@ -131,6 +132,8 @@ class RawMouse(Extension, QObject,):
                 }
                 if target in aliases:
                     target = aliases[target]
+                if target == "movy" and axis_vals["scale"] > 0.0:
+                    self._layer_change_increment = -1
             self._axis_target.append(target)
             self._axis_value.append(0.0)
             Logger.log("d", "axis %d, scale = %f, threshold = %f, offset = %f, target = %s", i, self._axis_scale[i], self._axis_threshold[i], self._axis_offset[i], self._axis_target[i])
@@ -254,6 +257,7 @@ class RawMouse(Extension, QObject,):
         try:
             modifiers = QtWidgets.QApplication.queryKeyboardModifiers()
             ctrl_is_active = (modifiers & QtCore.Qt.ControlModifier) == QtCore.Qt.ControlModifier
+            shift_is_active = (modifiers & QtCore.Qt.ShiftModifier) == QtCore.Qt.ShiftModifier
             if self._target_values["resetview"]:
                 self._roll = 0
                 if self._controller:
@@ -274,15 +278,22 @@ class RawMouse(Extension, QObject,):
                 elif self._fast_view:
                     self._controller.setActiveView("SimulationView")
                     self._fast_view = False
-                if self._target_values["movx"] != 0.0 or self._target_values["movy"] != 0.0:
-                    self._last_camera_update_at.start()
-                    self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, self._target_values["movx"], self._target_values["movy"], 0, 0))
-                if self._target_values["rotyaw"] != 0 or self._target_values["rotpitch"] != 0  or self._target_values["rotroll"] != 0:
-                    self._last_camera_update_at.start()
-                    self._rotateCamera(self._target_values["rotyaw"], self._target_values["rotpitch"], self._target_values["rotroll"])
-                if self._target_values["zoom"] != 0:
-                    self._last_camera_update_at.start()
-                    self._camera_tool._zoomCamera(self._target_values["zoom"])
+                current_view = self._controller.getActiveView()
+                if shift_is_active and current_view.getPluginId() == "SimulationView":
+                    if self._target_values["movy"] != 0.0:
+                        current_view.setLayer(current_view.getCurrentLayer() + (self._layer_change_increment if self._target_values["movy"] > 0 else -self._layer_change_increment))
+                    if self._target_values["rotyaw"] != 0.0:
+                        current_view.setMinimumLayer(current_view.getMinimumLayer() + (self._layer_change_increment if self._target_values["rotyaw"] > 0 else -self._layer_change_increment))
+                else:
+                    if self._target_values["movx"] != 0.0 or self._target_values["movy"] != 0.0:
+                        self._last_camera_update_at.start()
+                        self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, self._target_values["movx"], self._target_values["movy"], 0, 0))
+                    if self._target_values["rotyaw"] != 0 or self._target_values["rotpitch"] != 0  or self._target_values["rotroll"] != 0:
+                        self._last_camera_update_at.start()
+                        self._rotateCamera(self._target_values["rotyaw"], self._target_values["rotpitch"], self._target_values["rotroll"])
+                    if self._target_values["zoom"] != 0:
+                        self._last_camera_update_at.start()
+                        self._camera_tool._zoomCamera(self._target_values["zoom"])
         except Exception as e:
             Logger.log("e", "Exception while processing target values: %s", e)
         self._redraw_pending = False
