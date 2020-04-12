@@ -258,6 +258,7 @@ class RawMouse(Extension, QObject,):
             modifiers = QtWidgets.QApplication.queryKeyboardModifiers()
             ctrl_is_active = (modifiers & QtCore.Qt.ControlModifier) == QtCore.Qt.ControlModifier
             shift_is_active = (modifiers & QtCore.Qt.ShiftModifier) == QtCore.Qt.ShiftModifier
+            alt_is_active = (modifiers & QtCore.Qt.AltModifier) == QtCore.Qt.AltModifier
             if self._target_values["resetview"]:
                 self._roll = 0
                 if self._controller:
@@ -279,11 +280,13 @@ class RawMouse(Extension, QObject,):
                     self._controller.setActiveView("SimulationView")
                     self._fast_view = False
                 current_view = self._controller.getActiveView()
-                if shift_is_active and current_view.getPluginId() == "SimulationView":
+                if (shift_is_active or alt_is_active) and current_view.getPluginId() == "SimulationView":
                     if self._target_values["movy"] != 0.0:
-                        current_view.setLayer(current_view.getCurrentLayer() + (self._layer_change_increment if self._target_values["movy"] > 0 else -self._layer_change_increment))
-                    if self._target_values["rotyaw"] != 0.0:
-                        current_view.setMinimumLayer(current_view.getMinimumLayer() + (self._layer_change_increment if self._target_values["rotyaw"] > 0 else -self._layer_change_increment))
+                        delta = self._layer_change_increment if self._target_values["movy"] > 0 else -self._layer_change_increment
+                        if shift_is_active:
+                            current_view.setLayer(current_view.getCurrentLayer() + delta)
+                        if alt_is_active:
+                            current_view.setMinimumLayer(current_view.getMinimumLayer() + delta)
                 else:
                     if self._target_values["movx"] != 0.0 or self._target_values["movy"] != 0.0:
                         self._last_camera_update_at.start()
