@@ -283,6 +283,7 @@ class RawMouse(Extension, QObject,):
                 if (shift_is_active or alt_is_active) and current_view.getPluginId() == "SimulationView":
                     if self._target_values["movy"] != 0.0:
                         delta = self._layer_change_increment if self._target_values["movy"] > 0 else -self._layer_change_increment
+                        self._last_camera_update_at.start()
                         if shift_is_active:
                             current_view.setLayer(current_view.getCurrentLayer() + delta)
                         if alt_is_active:
