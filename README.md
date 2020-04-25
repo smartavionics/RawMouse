@@ -20,7 +20,7 @@ and a Gravis Tiltpad (which I don't seriously expect anyone to try and use with 
 HID messages it uses then it can be added.
 
 On systems that have an existing driver installed, you may need to disable that driver so that RawMouse can gain access to the device. On Windows, there is a *Stop 3DxWare* command that disables the
-normal Spacemouse driver.
+normal Spacemouse driver. (**edit 25/04/20, users report that on Windows you do not need to stop or disable the existing driver when using RawMouse**)
 
 ---
 
