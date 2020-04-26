@@ -138,5 +138,7 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 
 1.0.9 - added support for libspnav (Linux and MacOS only).
 
+master - now heeds interface_number (if specified) to select HID device + shift-movy moves the top layer slider handle, alt-movy moves the bottom layer slider handle.
+
 ---
 
