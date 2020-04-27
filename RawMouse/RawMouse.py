@@ -228,7 +228,7 @@ class RawMouse(Extension, QObject,):
             self._fast_view = False
             while self._running:
                 if self._main_window:
-                    d = h.read(64, 1000)
+                    d = h.read(64, 50 if self._fast_view else 1000)
                     if d:
                         if self._main_window.isActive():
                             self._decoder(d)
