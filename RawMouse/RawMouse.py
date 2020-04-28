@@ -421,6 +421,7 @@ class RawMouse(Extension, QObject,):
                 message += "\nAxes:"
                 for i in range(0, len(self._axis_scale)):
                     message += "\n [" + str(i) + "] scale " + str(self._axis_scale[i]) + " threshold " + str(self._axis_threshold[i]) + " offset " + str(self._axis_offset[i]) + " -> " + self._axis_target[i]
+            message += "\nModifiers:\n " + ("Cmd" if sys.platform == "darwin" else "Ctrl") + " = switch from preview to fastview\n Shift-movy = move max layer slider\n Alt-movy = move min layer slider"
             self._showMessage(message)
         except Exception as e:
             Logger.log("e", "Exception while showing device information: %s", e)
