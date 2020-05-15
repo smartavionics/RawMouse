@@ -26,7 +26,7 @@ class FastView(CuraView):
 
         for node in DepthFirstIterator(scene.getRoot()):
             if not node.render(renderer):
-                if node.getMeshData() and node.isVisible():
+                if node.getMeshData() and node.isVisible() and not node.callDecoration("isNonPrintingMesh"):
                     renderer.queueNode(node, shader = self._shader)
 
     def endRendering(self):
