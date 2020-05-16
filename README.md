@@ -27,7 +27,7 @@ normal Spacemouse driver. (**edit 25/04/20, users report that on Windows you do 
 ### Installation
 
 Download or clone this repository into [Cura configuration folder]/plugins/RawMouse
-The configuration folder can be found via Help -> Show Configuration Folder inside Cura.
+The configuration folder can be found via **Help -> Show Configuration Folder** inside Cura.
 
 Alternatively, download and unzip a release.
 
@@ -49,7 +49,7 @@ If you don't like giving everyone r/w access to all HID devices you can use a di
 
 ### Configuration
 
-RawMouse is configured using a JSON file that is located in the RawMouse plugin directory.
+RawMouse is configured using a JSON file (config.json) that is located in the RawMouse plugin directory.
 
 The configuration file can be edited when Cura is already running and reloaded using the Extensions -> RawMouse -> Restart menu item.
 
@@ -64,32 +64,42 @@ The configuration file elements are:
 
 **verbose** set to non-zero to increase logging verbosity
 
-**devices** is an array of device definitions, one for each supported device. Each definition is an array whose elements specify the vendor and product USB ids
- for the device, the name of the device profile to use and a description. Optionally, an extra dictionary of additional values can be specified.
- Currently, *platform*, *usage_page*, *usage* and *interface_number* values are recognised and they are used to select a particular HID device/interface when the device
+**devices** is an array of device definitions, one for each supported device. Each definition is an array whose elements specify the vendor and product USB ids for the device, the name of the device profile to use and a description. Optionally, an extra dictionary of additional values can be specified.
+> Currently, the additional values *platform*, *usage_page*, *usage* and *interface_number* values are recognised and they are used to select a particular HID device/interface when the device
  presents multiple interfaces. By default, *interface_number* is not required but you may need to add this if you are using a wireless receiver that is paired with multiple devices.
- This configuration file element (devices) is not required if libspnav is used to access a spacemouse.
+
+This configuration file element (devices) is not required if libspnav (see below) is used to access a spacemouse.
 
 **profiles** is dictionary of profile definitions. Each profile definition defines the axes and buttons the profile knows about.
+>
+>**axes** is an array of axis definitions, one for each of the device's axes. Each definition specifies the *offset*, *scale*, *threshold* and *target* values for the axis.
+>>
+>>**offset** is added to the axis value to remove any bias the device may have.
+>>
+>>**scale** scales the axis value. If you want to make the axis faster, increase the value. To slow the axis down, reduce the value. To flip the direction of movement, change the sign.
+>>
+>>**threshold** is the minimum value an axis must have before it has any effect.
+>>
+>>**target** is the name of the function that will be invoked when the axis value is greater than the threshold. Current target names are: "movx", "movy", "zoom", "rotpitch", "rotroll" and "rotyaw".
 
-**axes** is an array of axis definitions, one for each of the device's axes. Each definition specifies the *offset*, *scale*, *threshold* and *target* values for the axis.
-
-**offset** is added to the axis value to remove any bias the device may have.
-
-**scale** scales the axis value. If you want to make the axis faster, increase the value. To slow the axis down, reduce the value. To flip the direction of movement,
-change the sign.
-
-**threshold** is the minimum value an axis must have before it has any effect.
-
-**target** is the name of the function that will be invoked when the axis value is greater than the threshold.
- Current target names are: "movx", "movy", "zoom", "rotpitch", "rotroll" and "rotyaw".
-
-**buttons** is a dictionary of button definitions. The element keys are strings that match the button state and the value is a dictionary that specifies *value* and and *target* for the button.
+>**buttons** is a dictionary of button definitions. The element keys are strings that match the button state and the value is a dictionary that specifies *value* and and *target* for the button.
 When a button is activated, the specified target function is passed the value.
 
-**libspnav** on Linux and MacOS, this can be set to the pathname of the libspnav dynamic library. Devices accessed using this library will use the *libspnav* profile.
+**libspnav** on Linux and MacOS, this can be set to the pathname of the libspnav dynamic library (e.g."/usr/local/lib/libspnav.so"). Devices accessed using this library will use the *libspnav* profile.
 
 The Spacemice are configured so that button 1 resets the view (useful when you get lost in space) and button 2 toggles between the Cura prepare and preview screens.
+
+---
+
+### Menu
+
+The menu **Extensions -> RawMouse** provides these items:
+
+**Stop** stops the thread that reads the mouse events.
+
+**Restart** stops the event reading thread, reloads the configuration file and restarts the thread. Use this to make RawMouse aware of changes to config.json.
+
+**Show Device Information** pops up a dialog showing some information about the HID device in use along with the current axis definitions and some help blurb.
 
 ---
 
@@ -138,7 +148,7 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 
 1.0.9 - added support for libspnav (Linux and MacOS only).
 
-master - now heeds interface_number (if specified) to select HID device + shift-movy moves the top layer slider handle, alt-movy moves the bottom layer slider handle.
+1.0.10 - now heeds interface_number (if specified) to select HID device + shift-movy moves the top layer slider handle, alt-movy moves the bottom layer slider handle.
 
 ---
 
