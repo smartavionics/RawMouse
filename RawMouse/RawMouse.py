@@ -57,7 +57,7 @@ class RawMouse(Extension, QObject,):
         self._running = False
         self._runner = None
         self._battery_level = None
-        self._message = Message(title=catalog.i18nc("@info:title", "RawMouse"))
+        self._message = None
         self._redraw_pending = False
         self._roll = 0
         self._hidapi = None
@@ -427,6 +427,8 @@ class RawMouse(Extension, QObject,):
             Logger.log("e", "Exception while showing device information: %s", e)
 
     def _showMessage(self, str):
+        if self._message is None:
+            self._message = Message(title=catalog.i18nc("@info:title", "RawMouse " + self.getVersion()))
         self._message.hide()
         self._message.setText(catalog.i18nc("@info:status", str))
         self._message.show()
