@@ -209,6 +209,9 @@ class RawMouse(Extension, QObject,):
             self._runner.join(timeout = 2.0)
 
     def _run_hid(self):
+        runner_started_at = QTime()
+        runner_started_at.start()
+        auto_restart = False
         self._running = True
         try:
             h = self._hidapi.device()
@@ -239,10 +242,24 @@ class RawMouse(Extension, QObject,):
                     self._getComponents()
                     time.sleep(0.1)
             h.close()
+        except IOError as e:
+            Logger.log("e", "IOError while reading HID events: %s", e)
+            auto_restart = (sys.platform == "win32")
         except Exception as e:
             Logger.log("e", "Exception while reading HID events: %s", e)
         self._running = False
-        self._runner = None
+        if auto_restart:
+            # throttle restarts to avoid hogging the CPU
+            min_restart_seconds = 5
+            run_time = runner_started_at.elapsed() / 1000
+            if  run_time < min_restart_seconds:
+                Logger.log("d", "Delaying restart...")
+                time.sleep(min_restart_seconds - run_time)
+            if not self._running:
+                self._runner = None
+                self._restart()
+        else:
+            self._runner = None
 
     def _initTargetValues(self):
         self._target_values = {
