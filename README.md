@@ -150,5 +150,7 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 
 1.0.10 - now heeds interface_number (if specified) to select HID device + shift-movy moves the top layer slider handle, alt-movy moves the bottom layer slider handle.
 
+1.0.11 - added support for 64 bit ARM platforms.
+
 ---
 
