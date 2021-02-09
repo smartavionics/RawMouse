@@ -270,7 +270,11 @@ class RawMouse(Extension, QObject,):
             "rotroll": 0.0,
             "zoom": 0.0,
             "resetview": None,
-            "toggleview": None
+            "toggleview": None,
+            "maxlayer": None,
+            "minlayer": None,
+            "colorscheme": None,
+            "cameramode": None
         }
 
     processTargetValues = Signal()
@@ -281,6 +285,7 @@ class RawMouse(Extension, QObject,):
             ctrl_is_active = (modifiers & QtCore.Qt.ControlModifier) == QtCore.Qt.ControlModifier
             shift_is_active = (modifiers & QtCore.Qt.ShiftModifier) == QtCore.Qt.ShiftModifier
             alt_is_active = (modifiers & QtCore.Qt.AltModifier) == QtCore.Qt.AltModifier
+            current_view = self._controller.getActiveView()
             if self._target_values["resetview"]:
                 self._roll = 0
                 if self._controller:
@@ -293,6 +298,49 @@ class RawMouse(Extension, QObject,):
                     else:
                         self._controller.setActiveStage("PreviewStage")
                         self._controller.setActiveView("SimulationView")
+            elif self._target_values["maxlayer"]:
+                if current_view.getPluginId() == "SimulationView":
+                    layer = self._target_values["maxlayer"]
+                    if layer == "max":
+                        current_view.setLayer(current_view.getMaxLayers())
+                    elif layer == "min":
+                        current_view.setLayer(0)
+                    elif isinstance(layer, int):
+                        delta = layer * (10 if shift_is_active else 1)
+                        current_view.setLayer(current_view.getCurrentLayer() + delta)
+            elif self._target_values["minlayer"]:
+                if current_view.getPluginId() == "SimulationView":
+                    layer = self._target_values["minlayer"]
+                    if layer == "max":
+                        current_view.setMinimumLayerLayer(current_view.getMaxLayers())
+                    elif layer == "min":
+                        current_view.setMinimumLayer(0)
+                    elif isinstance(layer, int):
+                        delta = layer * (10 if shift_is_active else 1)
+                        current_view.setMinimumLayer(current_view.getMinimumLayer() + delta)
+            elif isinstance(self._target_values["colorscheme"], int):
+                if current_view.getPluginId() == "SimulationView":
+                    color_scheme = self._target_values["colorscheme"]
+                    if color_scheme >= 0 and color_scheme <= 3:
+                        self._application.getPreferences().setValue("layerview/layer_view_type", color_scheme)
+            elif self._target_values["colorscheme"]:
+                if current_view.getPluginId() == "SimulationView":
+                    if self._target_values["colorscheme"] == "next":
+                        color_scheme = current_view.getSimulationViewType() + 1
+                        if color_scheme > 3:
+                            color_scheme = 0
+                        self._application.getPreferences().setValue("layerview/layer_view_type", color_scheme)
+                    elif self._target_values["colorscheme"] == "prev":
+                        color_scheme = current_view.getSimulationViewType() - 1
+                        if color_scheme < 0:
+                            color_scheme = 3
+                        self._application.getPreferences().setValue("layerview/layer_view_type", color_scheme)
+            elif self._target_values["cameramode"]:
+                camera_mode = self._target_values["cameramode"]
+                if camera_mode != "perspective" and camera_mode != "orthographic":
+                    camera_mode = self._application.getPreferences().getValue("general/camera_perspective_mode")
+                    camera_mode = "perspective" if camera_mode == "orthographic" else "orthographic"
+                self._application.getPreferences().setValue("general/camera_perspective_mode", camera_mode)
             elif self._camera_tool and self._last_camera_update_at.elapsed() > self._min_camera_update_period:
                 if self._auto_fast_view or ctrl_is_active:
                     if self._controller.getActiveStage().getPluginId() == "PreviewStage" and self._controller.getActiveView().getPluginId() != "FastView":
@@ -301,7 +349,6 @@ class RawMouse(Extension, QObject,):
                 elif self._fast_view:
                     self._controller.setActiveView("SimulationView")
                     self._fast_view = False
-                current_view = self._controller.getActiveView()
                 if (shift_is_active or alt_is_active) and current_view.getPluginId() == "SimulationView":
                     if self._target_values["movy"] != 0.0:
                         delta = self._layer_change_increment if self._target_values["movy"] > 0 else -self._layer_change_increment

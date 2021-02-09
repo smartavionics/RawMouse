@@ -85,7 +85,17 @@ This configuration file element (devices) is not required if libspnav (see below
 >>**target** is the name of the function that will be invoked when the axis value is greater than the threshold. Current target names are: "movx", "movy", "zoom", "rotpitch", "rotroll" and "rotyaw".
 
 >**buttons** is a dictionary of button definitions. The element keys are strings that match the button state and the value is a dictionary that specifies *value* and and *target* for the button.
-When a button is activated, the specified target function is passed the value.
+When a button is activated, the specified target function is passed the value. The supported target functions are:
+>>**resetview** sets the view to the orientation specified by the value which should be one of ["3d"], ["home"], ["x", *dir*] or ["y", *dir*] where *dir* is an angle such as 90. You need the square brackets.
+>>
+>>**toggleview** toggles between the prepare and preview screens, it requires a non-zero value.
+>>
+>>**maxlayer** and **minlayer** adjust the preview layer slider max and min values. A value of "max" selects the topmost layer, a value of "min" selects the first layer. Alternatively, an integer value (positive or negative) will be added to the current layer and if you hold the shift key down at the same time, the value is multiplied by 10.
+>>
+>>**colorscheme** sets the preview colour scheme. Integer values from 1 to 4 select from "Material Color", "Line Type", "Speed" or "Layer Thickness", a value of "next" cycles to the next option and a value of "prev" cycles to the previous option.
+>>
+>>**cameramode** sets the camera mode, the value can be either "perspective" or "orthographic" to set the specified mode or any other non-false value to toggle between the modes.
+>>
 
 **libspnav** on Linux and MacOS, this can be set to the pathname of the libspnav dynamic library (e.g."/usr/local/lib/libspnav.so"). Devices accessed using this library will use the *libspnav* profile.
 

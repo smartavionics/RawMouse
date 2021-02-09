@@ -43,7 +43,12 @@
       ],
       "buttons" : {
         "1": { "value": [ "3d" ], "target": "resetview" },
-        "2": { "value": 1,        "target": "toggleview" }
+        "2": { "value": 1,        "target": "toggleview" },
+        "3": { "value": 1,        "target": "cameramode" },
+        "4": { "value": 1,        "target": "maxlayer" },
+        "5": { "value": -1,       "target": "maxlayer" },
+        "6": { "value": "next",   "target": "colorscheme" },
+        "7": { "value": "prev",   "target": "colorscheme" }
       }
     },
     "libspnav" : {
