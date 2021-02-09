@@ -484,7 +484,11 @@ class RawMouse(Extension, QObject,):
             if self._profile:
                 message += "\nAxes:"
                 for i in range(0, len(self._axis_scale)):
-                    message += "\n [" + str(i) + "] scale " + str(self._axis_scale[i]) + " threshold " + str(self._axis_threshold[i]) + " offset " + str(self._axis_offset[i]) + " -> " + self._axis_target[i]
+                    message += "\n&nbsp;[" + str(i) + "] scale " + str(self._axis_scale[i]) + " threshold " + str(self._axis_threshold[i]) + " offset " + str(self._axis_offset[i]) + " -> " + self._axis_target[i]
+                message += "\nButttons:"
+                button_defs = self._profile["buttons"]
+                for b in sorted(button_defs):
+                    message += "\n&nbsp;[" + b + "] target " + button_defs[b]["target"] + " value " + str(button_defs[b]["value"])
             message += "\nModifiers:\n " + ("Cmd" if sys.platform == "darwin" else "Ctrl") + " = switch from preview to fastview\n Shift-movy = move max layer slider\n Alt-movy = move min layer slider"
             self._showMessage(message)
         except Exception as e:
