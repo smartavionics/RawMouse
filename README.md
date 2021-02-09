@@ -96,6 +96,8 @@ When a button is activated, the specified target function is passed the value. T
 >>
 >>**cameramode** sets the camera mode, the value can be either "perspective" or "orthographic" to set the specified mode or any other non-false value to toggle between the modes.
 >>
+>>**centreobj** if an object is selected, move the camera so that the object is centered on the screen. If no object is selected, center the first object on the screen. It requires a non-zero value.
+>>
 
 **libspnav** on Linux and MacOS, this can be set to the pathname of the libspnav dynamic library (e.g."/usr/local/lib/libspnav.so"). Devices accessed using this library will use the *libspnav* profile.
 

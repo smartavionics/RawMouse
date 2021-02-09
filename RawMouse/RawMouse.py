@@ -20,8 +20,12 @@ from UM.Math.Vector import Vector
 from UM.Math.Matrix import Matrix
 from UM.Message import Message
 from UM.Signal import Signal, signalemitter
+from UM.Scene.Iterator.DepthFirstIterator import DepthFirstIterator
+from UM.Scene.SceneNode import SceneNode
+from UM.Scene.Selection import Selection
 
 from cura.CuraApplication import CuraApplication
+from cura import CameraAnimation
 
 from PyQt5.QtCore import QObject, QTime
 from PyQt5 import QtCore, QtWidgets
@@ -47,6 +51,7 @@ class RawMouse(Extension, QObject,):
         self._controller = None
         self._scene = None
         self._camera_tool = None
+        self._camera_animation = None
 
         self.setMenuName(catalog.i18nc("@item:inmenu", "RawMouse"))
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Stop"), self._stop)
@@ -75,6 +80,8 @@ class RawMouse(Extension, QObject,):
         elif self._camera_tool is None:
             self._camera_tool = self._controller.getCameraTool()
             self._scene = self._controller.getScene()
+            self._camera_animation = CameraAnimation.CameraAnimation()
+            self._camera_animation.setCameraTool(self._camera_tool)
         elif self._main_window is None:
             self._main_window = self._application.getMainWindow()
 
@@ -274,7 +281,8 @@ class RawMouse(Extension, QObject,):
             "maxlayer": None,
             "minlayer": None,
             "colorscheme": None,
-            "cameramode": None
+            "cameramode": None,
+            "centerobj": None
         }
 
     processTargetValues = Signal()
@@ -341,6 +349,20 @@ class RawMouse(Extension, QObject,):
                     camera_mode = self._application.getPreferences().getValue("general/camera_perspective_mode")
                     camera_mode = "perspective" if camera_mode == "orthographic" else "orthographic"
                 self._application.getPreferences().setValue("general/camera_perspective_mode", camera_mode)
+            elif self._target_values["centerobj"]:
+                pos = None
+                if self._camera_animation and Selection.getSelectedObject(0):
+                    pos = Selection.getSelectedObject(0).getWorldPosition()
+                else:
+                    for node in DepthFirstIterator(self._scene.getRoot()):
+                        if isinstance(node, SceneNode) and node.getMeshData() and node.isSelectable():
+                            pos = node.getWorldPosition()
+                            break
+                if pos:
+                    self._camera_animation.setStart(self._camera_tool.getOrigin())
+                    self._camera_animation.setTarget(pos)
+                    self._camera_animation.start()
+                    self._roll = 0
             elif self._camera_tool and self._last_camera_update_at.elapsed() > self._min_camera_update_period:
                 if self._auto_fast_view or ctrl_is_active:
                     if self._controller.getActiveStage().getPluginId() == "PreviewStage" and self._controller.getActiveView().getPluginId() != "FastView":

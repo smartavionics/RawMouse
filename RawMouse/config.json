@@ -48,7 +48,8 @@
         "4": { "value": 1,        "target": "maxlayer" },
         "5": { "value": -1,       "target": "maxlayer" },
         "6": { "value": "next",   "target": "colorscheme" },
-        "7": { "value": "prev",   "target": "colorscheme" }
+        "7": { "value": "prev",   "target": "colorscheme" },
+        "8": { "value": 1,        "target": "centerobj" }
       }
     },
     "libspnav" : {
