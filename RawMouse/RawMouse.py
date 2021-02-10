@@ -65,7 +65,11 @@ class RawMouse(Extension, QObject,):
         self._roll = 0
         self._hidapi = None
 
-        self.processTargetValues.connect(self._processTargetValues)
+        self._clearAxisWork()
+        self._clearButtonWork()
+
+        self.processAxes.connect(self._processAxes)
+        self.processButtons.connect(self._processButtons)
 
         self._reload(False)
         self._start()
@@ -264,14 +268,18 @@ class RawMouse(Extension, QObject,):
         else:
             self._runner = None
 
-    def _initTargetValues(self):
-        self._target_values = {
+    def _clearAxisWork(self):
+        self._axis_work = {
             "movx": 0.0,
             "movy": 0.0,
             "rotyaw": 0.0,
             "rotpitch": 0.0,
             "rotroll": 0.0,
-            "zoom": 0.0,
+            "zoom": 0.0
+        }
+
+    def _clearButtonWork(self):
+        self._button_work = {
             "resetview": None,
             "toggleview": None,
             "maxlayer": None,
@@ -281,20 +289,20 @@ class RawMouse(Extension, QObject,):
             "centerobj": None
         }
 
-    processTargetValues = Signal()
+    processAxes = Signal()
 
-    def _processTargetValues(self):
+    processButtons = Signal()
+
+    def _processButtons(self):
         try:
             modifiers = QtWidgets.QApplication.queryKeyboardModifiers()
-            ctrl_is_active = (modifiers & QtCore.Qt.ControlModifier) == QtCore.Qt.ControlModifier
             shift_is_active = (modifiers & QtCore.Qt.ShiftModifier) == QtCore.Qt.ShiftModifier
-            alt_is_active = (modifiers & QtCore.Qt.AltModifier) == QtCore.Qt.AltModifier
             current_view = self._controller.getActiveView()
-            if self._target_values["resetview"]:
+            if self._button_work["resetview"]:
                 self._roll = 0
                 if self._controller:
-                    self._controller.setCameraRotation(*self._target_values["resetview"])
-            elif self._target_values["toggleview"]:
+                    self._controller.setCameraRotation(*self._button_work["resetview"])
+            elif self._button_work["toggleview"]:
                 if self._controller:
                     if self._controller.getActiveView().getPluginId() == "SimulationView":
                         self._controller.setActiveStage("PrepareStage")
@@ -302,9 +310,9 @@ class RawMouse(Extension, QObject,):
                     else:
                         self._controller.setActiveStage("PreviewStage")
                         self._controller.setActiveView("SimulationView")
-            elif self._target_values["maxlayer"]:
+            elif self._button_work["maxlayer"]:
                 if current_view.getPluginId() == "SimulationView":
-                    layer = self._target_values["maxlayer"]
+                    layer = self._button_work["maxlayer"]
                     if layer == "max":
                         current_view.setLayer(current_view.getMaxLayers())
                     elif layer == "min":
@@ -312,9 +320,9 @@ class RawMouse(Extension, QObject,):
                     elif isinstance(layer, int):
                         delta = layer * (10 if shift_is_active else 1)
                         current_view.setLayer(current_view.getCurrentLayer() + delta)
-            elif self._target_values["minlayer"]:
+            elif self._button_work["minlayer"]:
                 if current_view.getPluginId() == "SimulationView":
-                    layer = self._target_values["minlayer"]
+                    layer = self._button_work["minlayer"]
                     if layer == "max":
                         current_view.setMinimumLayerLayer(current_view.getMaxLayers())
                     elif layer == "min":
@@ -322,30 +330,30 @@ class RawMouse(Extension, QObject,):
                     elif isinstance(layer, int):
                         delta = layer * (10 if shift_is_active else 1)
                         current_view.setMinimumLayer(current_view.getMinimumLayer() + delta)
-            elif isinstance(self._target_values["colorscheme"], int):
+            elif isinstance(self._button_work["colorscheme"], int):
                 if current_view.getPluginId() == "SimulationView":
-                    color_scheme = self._target_values["colorscheme"]
+                    color_scheme = self._button_work["colorscheme"]
                     if color_scheme >= 0 and color_scheme <= 3:
                         self._application.getPreferences().setValue("layerview/layer_view_type", color_scheme)
-            elif self._target_values["colorscheme"]:
+            elif self._button_work["colorscheme"]:
                 if current_view.getPluginId() == "SimulationView":
-                    if self._target_values["colorscheme"] == "next":
+                    if self._button_work["colorscheme"] == "next":
                         color_scheme = current_view.getSimulationViewType() + 1
                         if color_scheme > 3:
                             color_scheme = 0
                         self._application.getPreferences().setValue("layerview/layer_view_type", color_scheme)
-                    elif self._target_values["colorscheme"] == "prev":
+                    elif self._button_work["colorscheme"] == "prev":
                         color_scheme = current_view.getSimulationViewType() - 1
                         if color_scheme < 0:
                             color_scheme = 3
                         self._application.getPreferences().setValue("layerview/layer_view_type", color_scheme)
-            elif self._target_values["cameramode"]:
-                camera_mode = self._target_values["cameramode"]
+            elif self._button_work["cameramode"]:
+                camera_mode = self._button_work["cameramode"]
                 if camera_mode != "perspective" and camera_mode != "orthographic":
                     camera_mode = self._application.getPreferences().getValue("general/camera_perspective_mode")
                     camera_mode = "perspective" if camera_mode == "orthographic" else "orthographic"
                 self._application.getPreferences().setValue("general/camera_perspective_mode", camera_mode)
-            elif self._target_values["centerobj"]:
+            elif self._button_work["centerobj"]:
                 target_node = None
                 if Selection.getSelectedObject(0):
                     target_node = Selection.getSelectedObject(0)
@@ -363,7 +371,18 @@ class RawMouse(Extension, QObject,):
                         camera.setPosition(Vector(camera_pos.x, target_node.getBoundingBox().height, camera_pos.z))
                         camera.lookAt(target_node.getWorldPosition())
                     self._roll = 0
-            elif self._camera_tool and self._last_camera_update_at.elapsed() > self._min_camera_update_period:
+        except Exception as e:
+            Logger.log("e", "Exception while processing buttons: %s", e)
+        self._clearButtonWork()
+
+    def _processAxes(self):
+        try:
+            modifiers = QtWidgets.QApplication.queryKeyboardModifiers()
+            ctrl_is_active = (modifiers & QtCore.Qt.ControlModifier) == QtCore.Qt.ControlModifier
+            shift_is_active = (modifiers & QtCore.Qt.ShiftModifier) == QtCore.Qt.ShiftModifier
+            alt_is_active = (modifiers & QtCore.Qt.AltModifier) == QtCore.Qt.AltModifier
+            current_view = self._controller.getActiveView()
+            if self._camera_tool and self._last_camera_update_at.elapsed() > self._min_camera_update_period:
                 if self._auto_fast_view or ctrl_is_active:
                     if self._controller.getActiveStage().getPluginId() == "PreviewStage" and self._controller.getActiveView().getPluginId() != "FastView":
                         self._controller.setActiveView("FastView")
@@ -372,26 +391,27 @@ class RawMouse(Extension, QObject,):
                     self._controller.setActiveView("SimulationView")
                     self._fast_view = False
                 if (shift_is_active or alt_is_active) and current_view.getPluginId() == "SimulationView":
-                    if self._target_values["movy"] != 0.0:
-                        delta = self._layer_change_increment if self._target_values["movy"] > 0 else -self._layer_change_increment
+                    if self._axis_work["movy"] != 0.0:
+                        delta = self._layer_change_increment if self._axis_work["movy"] > 0 else -self._layer_change_increment
                         self._last_camera_update_at.start()
                         if shift_is_active:
                             current_view.setLayer(current_view.getCurrentLayer() + delta)
                         if alt_is_active:
                             current_view.setMinimumLayer(current_view.getMinimumLayer() + delta)
                 else:
-                    if self._target_values["movx"] != 0.0 or self._target_values["movy"] != 0.0:
+                    if self._axis_work["movx"] != 0.0 or self._axis_work["movy"] != 0.0:
                         self._last_camera_update_at.start()
-                        self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, self._target_values["movx"], self._target_values["movy"], 0, 0))
-                    if self._target_values["rotyaw"] != 0 or self._target_values["rotpitch"] != 0  or self._target_values["rotroll"] != 0:
+                        self._camera_tool._moveCamera(MouseEvent(MouseEvent.MouseMoveEvent, self._axis_work["movx"], self._axis_work["movy"], 0, 0))
+                    if self._axis_work["rotyaw"] != 0 or self._axis_work["rotpitch"] != 0  or self._axis_work["rotroll"] != 0:
                         self._last_camera_update_at.start()
-                        self._rotateCamera(self._target_values["rotyaw"], self._target_values["rotpitch"], self._target_values["rotroll"])
-                    if self._target_values["zoom"] != 0:
+                        self._rotateCamera(self._axis_work["rotyaw"], self._axis_work["rotpitch"], self._axis_work["rotroll"])
+                    if self._axis_work["zoom"] != 0:
                         self._last_camera_update_at.start()
-                        self._camera_tool._zoomCamera(self._target_values["zoom"])
+                        self._camera_tool._zoomCamera(self._axis_work["zoom"])
         except Exception as e:
-            Logger.log("e", "Exception while processing target values: %s", e)
+            Logger.log("e", "Exception while processing axes: %s", e)
         self._redraw_pending = False
+        self._clearAxisWork()
 
     def _decodeSpacemouseEvent(self, buf):
         scale = 1.0 / 350.0
@@ -427,61 +447,55 @@ class RawMouse(Extension, QObject,):
     def _spacemouseAxisEvent(self, vals):
         if self._verbose > 0:
             Logger.log("d", "Axes [%f,%f,%f,%f,%f,%f]", vals[0], vals[1], vals[2], vals[3], vals[4], vals[5])
-        self._initTargetValues()
         process = False
         scale = self._getScalingDueToZoom()
         for i in range(0, 6):
             if vals[i] > self._axis_threshold[i]:
-                self._target_values[self._axis_target[i]] = (vals[i] - self._axis_threshold[i]) * scale
+                self._axis_work[self._axis_target[i]] = (vals[i] - self._axis_threshold[i]) * scale
                 process = True
             elif vals[i] < -self._axis_threshold[i]:
-                self._target_values[self._axis_target[i]] = (vals[i] + self._axis_threshold[i]) * scale
+                self._axis_work[self._axis_target[i]] = (vals[i] + self._axis_threshold[i]) * scale
                 process = True
         if process:
             if not self._redraw_pending:
                 self._redraw_pending = True
-                self.processTargetValues.emit()
+                self.processAxes.emit()
 
     def _spacemouseButtonEvent(self, button, val):
         if self._verbose > 0:
             Logger.log("d", "button[%d] = %f", button, val)
         if val == 1:
-            self._initTargetValues();
-            process = False
             button_defs = self._profile["buttons"]
             for b in button_defs:
                 if button == int(b):
-                    self._target_values[button_defs[b]["target"]] = button_defs[b]["value"]
-                    process = True
-            if process:
-                if not self._redraw_pending:
-                    self._redraw_pending = True
-                    self.processTargetValues.emit()
+                    self._button_work[button_defs[b]["target"]] = button_defs[b]["value"]
+                    self.processButtons.emit()
+                    return
 
     def _decodeTiltpadEvent(self, buf):
-        self._initTargetValues()
         scale = self._getScalingDueToZoom()
-        process = False
+        process_axes = False
         #tilt
         for a in range(0, 2):
             val = (buf[a] - 127) * self._axis_scale[a] + self._axis_offset[a]
             if val > self._axis_threshold[a]:
-                self._target_values[self._axis_target[a]] = (val - self._axis_threshold[a]) * scale
-                process = True
+                self._axis_work[self._axis_target[a]] = (val - self._axis_threshold[a]) * scale
+                process_axes = True
             elif val < -self._axis_threshold[a]:
-                self._target_values[self._axis_target[a]] = (val + self._axis_threshold[a]) * scale
-                process = True
+                self._axis_work[self._axis_target[a]] = (val + self._axis_threshold[a]) * scale
+                process_axes = True
+        if process_axes:
+            if not self._redraw_pending:
+                self._redraw_pending = True
+                self.processAxes.emit()
         buttons = buf[3] & 0x7f
         if buttons != 0:
             button_defs = self._profile["buttons"]
             for b in button_defs:
                 if buttons == int(b, base = 16):
-                    self._target_values[button_defs[b]["target"]] = button_defs[b]["value"]
-                    process = True
-        if process:
-            if not self._redraw_pending:
-                self._redraw_pending = True
-                self.processTargetValues.emit()
+                    self._button_work[button_defs[b]["target"]] = button_defs[b]["value"]
+                    self.processButtons.emit()
+                    return
 
     def _decodeUnknownEvent(self, buf):
         Logger.log("d", "Unknown event: len = %d [0] = %x", len(buf), buf[0])
