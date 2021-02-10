@@ -166,5 +166,7 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 
 1.0.11 - added support for 64 bit ARM platforms.
 
+1.0.12 - added maxlayer, minlayer, colorscheme, cameramode and centreobj button functions and made centreobj the default for button 1.
+
 ---
 
