@@ -418,8 +418,9 @@ class RawMouse(Extension, QObject,):
                     self._spacemouseButtonEvent(b + 1, (buttons & mask) >> b)
             self._buttons = buttons
         elif len(buf) >= 3 and buf[0] == 0x17:
-            self._battery_level = buf[1]
-            Logger.log("d", "Spacemouse battery level %d%%", buf[1])
+            if buf[1] != self._battery_level:
+                self._battery_level = buf[1]
+                Logger.log("d", "Spacemouse battery level %d%%", buf[1])
         else:
             Logger.log("d", "Unknown spacemouse event: code = %x, len = %d", buf[0], len(buf))
 
