@@ -370,6 +370,23 @@ class RawMouse(Extension, QObject,):
                     if camera_pos.y < 0:
                         camera.setPosition(Vector(camera_pos.x, target_node.getBoundingBox().height, camera_pos.z))
                         camera.lookAt(target_node.getWorldPosition())
+                    if isinstance(self._button_work["centerobj"], float):
+                        # simple fit object to screen based on object's longest dimension
+                        bb = target_node.getBoundingBox()
+                        target_size = max(bb.height, bb.width, bb.depth)
+                        if camera.isPerspective():
+                            #Logger.log("d", "target at " + str(target_node.getWorldPosition()) + ", camera at " + str(camera.getWorldPosition()))
+                            move_vector = (camera.getWorldPosition() - target_node.getWorldPosition()).normalized() * target_size * 2 / self._button_work["centerobj"]
+                            #Logger.log("d", "target size is " + str(target_size) + " move vector is " + str(move_vector))
+                            camera.setPosition(target_node.getWorldPosition() + move_vector)
+                        else:
+                            zoom_factor = camera.getDefaultZoomFactor() * (1 + 3.0 * self._button_work["centerobj"] / math.sqrt(target_size))
+                            if zoom_factor > 1:
+                                zoom_factor = 1
+                            elif zoom_factor < -0.495:
+                                zoom_factor = -0.495
+                            #Logger.log("d", "zoom factor is " + str(zoom_factor))
+                            camera.setZoomFactor(zoom_factor)
                     self._roll = 0
         except Exception as e:
             Logger.log("e", "Exception while processing buttons: %s", e)
