@@ -300,16 +300,14 @@ class RawMouse(Extension, QObject,):
             current_view = self._controller.getActiveView()
             if self._button_work["resetview"]:
                 self._roll = 0
-                if self._controller:
-                    self._controller.setCameraRotation(*self._button_work["resetview"])
+                self._controller.setCameraRotation(*self._button_work["resetview"])
             elif self._button_work["toggleview"]:
-                if self._controller:
-                    if self._controller.getActiveView().getPluginId() == "SimulationView":
-                        self._controller.setActiveStage("PrepareStage")
-                        self._controller.setActiveView("SolidView")
-                    else:
-                        self._controller.setActiveStage("PreviewStage")
-                        self._controller.setActiveView("SimulationView")
+                if self._controller.getActiveView().getPluginId() == "SimulationView":
+                    self._controller.setActiveStage("PrepareStage")
+                    self._controller.setActiveView("SolidView")
+                else:
+                    self._controller.setActiveStage("PreviewStage")
+                    self._controller.setActiveView("SimulationView")
             elif self._button_work["maxlayer"]:
                 if current_view.getPluginId() == "SimulationView":
                     layer = self._button_work["maxlayer"]
@@ -399,7 +397,7 @@ class RawMouse(Extension, QObject,):
             shift_is_active = (modifiers & QtCore.Qt.ShiftModifier) == QtCore.Qt.ShiftModifier
             alt_is_active = (modifiers & QtCore.Qt.AltModifier) == QtCore.Qt.AltModifier
             current_view = self._controller.getActiveView()
-            if self._camera_tool and self._last_camera_update_at.elapsed() > self._min_camera_update_period:
+            if self._last_camera_update_at.elapsed() > self._min_camera_update_period:
                 if self._auto_fast_view or ctrl_is_active:
                     if self._controller.getActiveStage().getPluginId() == "PreviewStage" and self._controller.getActiveView().getPluginId() != "FastView":
                         self._controller.setActiveView("FastView")
