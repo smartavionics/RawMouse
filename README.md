@@ -96,7 +96,7 @@ When a button is activated, the specified target function is passed the value. T
 >>
 >>**cameramode** sets the camera mode, the value can be either "perspective" or "orthographic" to set the specified mode or any other non-false value to toggle between the modes.
 >>
->>**centreobj** if an object is selected, move the camera so that the object is centered on the screen. If no object is selected, center the first object on the screen. It requires a non-zero value. If the value contains a decimal point (i.e. 1.0 rather than 1) it adjusts the camera so that the selected object mostly fills the view. Using a value other than 1.0 alters the amount the view is scaled.
+>>**centreobj** if an object is selected, move the camera so that the object is centered on the screen. If no object is selected, center the first object on the screen. If no objects are loaded, the 3d view of the buildplate is displayed. It requires a non-zero value. If the value contains a decimal point (i.e. 1.0 rather than 1) it adjusts the camera so that the centered object mostly fills the view. Using a value other than 1.0 alters the amount the view is scaled (e.g. specifying 0.9 reduces the size of the object).
 >>
 
 **libspnav** on Linux and MacOS, this can be set to the pathname of the libspnav dynamic library (e.g."/usr/local/lib/libspnav.so"). Devices accessed using this library will use the *libspnav* profile.

@@ -385,7 +385,9 @@ class RawMouse(Extension, QObject,):
                                 zoom_factor = -0.495
                             #Logger.log("d", "zoom factor is " + str(zoom_factor))
                             camera.setZoomFactor(zoom_factor)
-                    self._roll = 0
+                else:
+                    self._controller.setCameraRotation("3d", 0)
+                self._roll = 0
         except Exception as e:
             Logger.log("e", "Exception while processing buttons: %s", e)
         self._clearButtonWork()
