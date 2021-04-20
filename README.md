@@ -170,5 +170,7 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 
 1.0.13 - centreobj can now zoom the view so that the centered object mostly fills the screen.
 
+1.1.0 - added support for Cura 4.9 which is based on Python 3.8.
+
 ---
 
