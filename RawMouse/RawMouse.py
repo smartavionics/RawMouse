@@ -150,15 +150,16 @@ class RawMouse(Extension, QObject,):
         if "devices" in self._config:
             try:
                 if self._hidapi is None:
+                    pv = ".".join(platform.python_version_tuple()[0:2])
                     if sys.platform == "linux":
-                        sys_name = "linux-" + os.uname()[4]
+                        sys_name = "linux-" + os.uname().machine
                     elif sys.platform == "win32":
                         sys_name = "win-amd64"
                     elif sys.platform == "darwin":
-                        sys_name = "macosx-10.13-intel"
+                        sys_name = "macosx-10.13-" + ("intel" if pv == "3.5" else os.uname().machine)
                     else:
                         sys_name = "unknown"
-                    egg_name = "hidapi-0.9.0-py" + ".".join(platform.python_version_tuple()[0:2]) + "-" + sys_name + ".egg";
+                    egg_name = "hidapi-0.9.0-py" + pv + "-" + sys_name + ".egg"
                     sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hidapi", egg_name))
                     import hid
                     Logger.log("d", "Imported %s", str(hid))
