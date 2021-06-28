@@ -23,7 +23,7 @@ class FastView(CuraView):
         renderer = self.getRenderer()
 
         if not self._shader:
-            self._shader = OpenGL.getInstance().createShaderProgram(Resources.getPath(Resources.Shaders, "object.shader"))
+            self._shader = OpenGL.getInstance().createShaderProgram(Resources.getPath(Resources.Shaders, "transparent_object.shader"))
 
         for node in DepthFirstIterator(scene.getRoot()):
             if type(node) is ConvexHullNode:
