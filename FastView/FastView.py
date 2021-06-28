@@ -8,6 +8,7 @@ from UM.Scene.Iterator.DepthFirstIterator import DepthFirstIterator
 from UM.View.GL.OpenGL import OpenGL
 
 from cura.CuraView import CuraView
+from cura.Scene.ConvexHullNode import ConvexHullNode
 
 ## Standard view for mesh models.
 
@@ -25,6 +26,8 @@ class FastView(CuraView):
             self._shader = OpenGL.getInstance().createShaderProgram(Resources.getPath(Resources.Shaders, "object.shader"))
 
         for node in DepthFirstIterator(scene.getRoot()):
+            if type(node) is ConvexHullNode:
+                continue
             if not node.render(renderer):
                 if node.getMeshData() and node.isVisible() and not node.callDecoration("isNonPrintingMesh"):
                     renderer.queueNode(node, shader = self._shader)
