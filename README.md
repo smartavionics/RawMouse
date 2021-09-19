@@ -113,6 +113,8 @@ The menu **Extensions -> RawMouse** provides these items:
 
 **Restart** stops the event reading thread, reloads the configuration file and restarts the thread. Use this to make RawMouse aware of changes to config.json.
 
+**Flip Axes** reverses the direction of movement for all axes. Equivalent to changing the sign of the axes' scale values. Flip state persists across Cura restarts.
+
 **Show Device Information** pops up a dialog showing some information about the HID device in use along with the current axis definitions and some help blurb.
 
 ---
