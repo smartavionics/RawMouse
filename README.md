@@ -172,5 +172,7 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 
 1.1.0 - added support for Cura 4.9 which is based on Python 3.8.
 
+1.1.1 - added menu option to flip the axes (based on code contributed by https://github.com/jedikalimero). Flip state is saved for future sessions.
+
 ---
 

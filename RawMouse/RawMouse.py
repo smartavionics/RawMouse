@@ -45,15 +45,19 @@ class RawMouse(Extension, QObject,):
             "tiltpad":    self._decodeTiltpadEvent
         }
 
-        self._application = None
+        self._application = CuraApplication.getInstance()
+        self._controller = self._application.getController()
+        self._preferences = self._application.getPreferences()
+        self._preferences.addPreference("rawmouse/flip_axes", False)
+
         self._main_window = None
-        self._controller = None
         self._scene = None
         self._camera_tool = None
 
         self.setMenuName(catalog.i18nc("@item:inmenu", "RawMouse"))
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Stop"), self._stop)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Restart"), self._restart)
+        self.addMenuItem(catalog.i18nc("@item:inmenu", "Flip Axes"), self._flipAxes)
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Show Device Information"), self._showDeviceInformation)
 
         self._buttons = 0
@@ -75,11 +79,7 @@ class RawMouse(Extension, QObject,):
         self._start()
 
     def _getComponents(self):
-        if self._application is None:
-            self._application = CuraApplication.getInstance()
-        elif self._controller is None:
-            self._controller = self._application.getController()
-        elif self._camera_tool is None:
+        if self._camera_tool is None:
             self._camera_tool = self._controller.getCameraTool()
             self._scene = self._controller.getScene()
         elif self._main_window is None:
@@ -125,10 +125,11 @@ class RawMouse(Extension, QObject,):
         profile_axes = self._profile["axes"]
         if self._hid_dev is not None:
             Logger.log("d", "Device %s / %s, profile %s", self._hid_dev["manufacturer_string"], self._hid_dev["product_string"], self._profile_name);
+        axis_sign = -1 if self._preferences.getValue("rawmouse/flip_axes") else 1
         for i in range(0, len(profile_axes)):
             axis_vals = profile_axes[i]
             self._axis_threshold.append(axis_vals["threshold"])
-            self._axis_scale.append(axis_vals["scale"])
+            self._axis_scale.append(axis_vals["scale"] * axis_sign)
             self._axis_offset.append(axis_vals["offset"])
             target = ""
             if "target" in axis_vals:
@@ -592,6 +593,12 @@ class RawMouse(Extension, QObject,):
         mroll = Matrix()
         mroll.setByRotationAxis(self._roll, (n - self._camera_tool._origin))
         camera.lookAt(self._camera_tool._origin, Vector.Unit_Y.multiply(mroll))
+
+    def _flipAxes(self):
+        for i in range(0, len(self._axis_scale)):
+            self._axis_scale[i] *= -1
+        self._preferences.setValue("rawmouse/flip_axes", not self._preferences.getValue("rawmouse/flip_axes"))
+        return
 
     def _run_libspnav(self):
         self._running = True
