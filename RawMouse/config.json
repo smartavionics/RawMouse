@@ -42,7 +42,7 @@
         { "offset": 0.0, "scale":  0.1, "threshold": 0.01, "target": "rotyaw" }
       ],
       "buttons" : {
-        "1": { "value": 1.0,      "target": "centerobj" },
+        "1": { "value": 0.725,    "target": "centerobj" },
         "2": { "value": 1,        "target": "toggleview" },
         "3": { "value": 1,        "target": "cameramode" },
         "4": { "value": 1,        "target": "maxlayer" },
