@@ -354,31 +354,29 @@ class RawMouse(Extension, QObject,):
                     camera_mode = "perspective" if camera_mode == "orthographic" else "orthographic"
                 self._application.getPreferences().setValue("general/camera_perspective_mode", camera_mode)
             elif self._button_work["centerobj"]:
-                target_node = None
+                bb = None
                 if Selection.getSelectedObject(0):
-                    target_node = Selection.getSelectedObject(0)
+                    bb = Selection.getSelectedObject(0).getBoundingBox()
                 else:
                     for node in DepthFirstIterator(self._scene.getRoot()):
                         if isinstance(node, SceneNode) and node.getMeshData() and node.isSelectable():
-                            target_node = node
-                            break
-                if target_node:
-                    self._camera_tool.setOrigin(target_node.getWorldPosition())
+                            bb = (bb + node.getBoundingBox()) if bb is not None else node.getBoundingBox()
+                if bb:
+                    self._camera_tool.setOrigin(bb.center)
                     camera = self._scene.getActiveCamera()
                     camera_pos = camera.getWorldPosition()
                     #Logger.log("d", "Camera pos = " + str(camera_pos))
                     if camera_pos.y < 0:
-                        camera.setPosition(Vector(camera_pos.x, target_node.getBoundingBox().height, camera_pos.z))
-                        camera.lookAt(target_node.getWorldPosition())
+                        camera.setPosition(Vector(camera_pos.x, bb.height, camera_pos.z))
+                        camera.lookAt(bb.center)
                     if isinstance(self._button_work["centerobj"], float):
                         # simple fit object to screen based on object's longest dimension
-                        bb = target_node.getBoundingBox()
                         target_size = max(bb.height, bb.width, bb.depth)
                         if camera.isPerspective():
-                            #Logger.log("d", "target at " + str(target_node.getWorldPosition()) + ", camera at " + str(camera.getWorldPosition()))
-                            move_vector = (camera.getWorldPosition() - target_node.getWorldPosition()).normalized() * target_size * 2 / self._button_work["centerobj"]
+                            #Logger.log("d", "target at " + str(bb.center) + ", camera at " + str(camera.getWorldPosition()))
+                            move_vector = (camera.getWorldPosition() - bb.center).normalized() * target_size * 2 / self._button_work["centerobj"]
                             #Logger.log("d", "target size is " + str(target_size) + " move vector is " + str(move_vector))
-                            camera.setPosition(target_node.getWorldPosition() + move_vector)
+                            camera.setPosition(bb.center + move_vector)
                         else:
                             zoom_factor = camera.getDefaultZoomFactor() * (1 + 3.0 * self._button_work["centerobj"] / math.sqrt(target_size))
                             if zoom_factor > 1:
