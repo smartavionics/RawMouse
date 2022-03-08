@@ -176,5 +176,7 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 
 1.1.1 - added menu option to flip the axes (based on code contributed by https://github.com/jedikalimero). Flip state is saved for future sessions.
 
+1.2.0 - centreobj now uses the centre of the combined bounding box of all objects if none are selected + add support for Python 3.10.
+
 ---
 
