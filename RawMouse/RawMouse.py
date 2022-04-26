@@ -26,8 +26,15 @@ from UM.Scene.Selection import Selection
 
 from cura.CuraApplication import CuraApplication
 
-from PyQt5.QtCore import QObject, QTime
-from PyQt5 import QtCore, QtWidgets
+using_QT5 = False
+
+try:
+    from PyQt6.QtCore import QObject, QTime
+    from PyQt6 import QtCore, QtWidgets
+except ImportError:
+    from PyQt5.QtCore import QObject, QTime
+    from PyQt5 import QtCore, QtWidgets
+    using_QT5 = True
 
 from UM.i18n import i18nCatalog
 catalog = i18nCatalog("cura")
@@ -298,7 +305,10 @@ class RawMouse(Extension, QObject,):
     def _processButtons(self):
         try:
             modifiers = QtWidgets.QApplication.queryKeyboardModifiers()
-            shift_is_active = (modifiers & QtCore.Qt.ShiftModifier) == QtCore.Qt.ShiftModifier
+            if using_QT5:
+                shift_is_active = (modifiers & QtCore.Qt.ShiftModifier) == QtCore.Qt.ShiftModifier
+            else:
+                shift_is_active = (modifiers & QtCore.Qt.KeyboardModifier.ShiftModifier) != QtCore.Qt.KeyboardModifier.NoModifier
             current_view = self._controller.getActiveView()
             if self._button_work["resetview"]:
                 self._roll = 0
@@ -395,9 +405,14 @@ class RawMouse(Extension, QObject,):
     def _processAxes(self):
         try:
             modifiers = QtWidgets.QApplication.queryKeyboardModifiers()
-            ctrl_is_active = (modifiers & QtCore.Qt.ControlModifier) == QtCore.Qt.ControlModifier
-            shift_is_active = (modifiers & QtCore.Qt.ShiftModifier) == QtCore.Qt.ShiftModifier
-            alt_is_active = (modifiers & QtCore.Qt.AltModifier) == QtCore.Qt.AltModifier
+            if using_QT5:
+                ctrl_is_active = (modifiers & QtCore.Qt.ControlModifier) == QtCore.Qt.ControlModifier
+                shift_is_active = (modifiers & QtCore.Qt.ShiftModifier) == QtCore.Qt.ShiftModifier
+                alt_is_active = (modifiers & QtCore.Qt.AltModifier) == QtCore.Qt.AltModifier
+            else:
+                ctrl_is_active = (modifiers & QtCore.Qt.KeyboardModifier.ControlModifier) != QtCore.Qt.KeyboardModifier.NoModifier
+                shift_is_active = (modifiers & QtCore.Qt.KeyboardModifier.ShiftModifier) != QtCore.Qt.KeyboardModifier.NoModifier
+                alt_is_active = (modifiers & QtCore.Qt.KeyboardModifier.AltModifier) != QtCore.Qt.KeyboardModifier.NoModifier
             current_view = self._controller.getActiveView()
             if self._last_camera_update_at.elapsed() > self._min_camera_update_period:
                 if self._auto_fast_view or ctrl_is_active:
