@@ -167,8 +167,10 @@ class RawMouse(Extension, QObject,):
                         sys_name = "macosx-10.13-" + ("intel" if pv == "3.5" else os.uname().machine)
                     else:
                         sys_name = "unknown"
-                    egg_name = "hidapi-0.9.0-py" + pv + "-" + sys_name + ".egg"
-                    sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hidapi", egg_name))
+                    hidapi_name = "hidapi-0.9.0-py" + pv + "-" + sys_name
+                    if pv == "3.5" or pv == "3.8":
+                        hidapi_name += ".egg"
+                    sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hidapi", hidapi_name))
                     import hid
                     Logger.log("d", "Imported %s", str(hid))
                     self._hidapi = hid
