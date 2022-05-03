@@ -199,6 +199,7 @@ class RawMouse(Extension, QObject,):
                 Logger.log("e", "Exception initialising profile: %s", e)
 
         if self._hid_dev:
+            Logger.log("d", "Starting HID event reader")
             self._runner = Thread(target = self._run_hid, daemon = True, name = "RawMouse")
             self._runner.start()
         elif "libspnav" in self._config and os.path.exists(self._config["libspnav"]):
@@ -227,6 +228,7 @@ class RawMouse(Extension, QObject,):
             self._runner.join(timeout = 2.0)
 
     def _run_hid(self):
+        Logger.log("d", "HID event reader running...")
         runner_started_at = QTime()
         runner_started_at.start()
         auto_restart = False
