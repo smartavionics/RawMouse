@@ -29,10 +29,10 @@ from cura.CuraApplication import CuraApplication
 using_QT5 = False
 
 try:
-    from PyQt6.QtCore import QObject, QTime
+    from PyQt6.QtCore import QObject, QElapsedTimer
     from PyQt6 import QtCore, QtWidgets
 except ImportError:
-    from PyQt5.QtCore import QObject, QTime
+    from PyQt5.QtCore import QObject, QElapsedTimer
     from PyQt5 import QtCore, QtWidgets
     using_QT5 = True
 
@@ -229,7 +229,7 @@ class RawMouse(Extension, QObject,):
 
     def _run_hid(self):
         Logger.log("d", "HID event reader running...")
-        runner_started_at = QTime()
+        runner_started_at = QElapsedTimer()
         runner_started_at.start()
         auto_restart = False
         self._running = True
@@ -246,7 +246,7 @@ class RawMouse(Extension, QObject,):
             Logger.log("i", "Product: %s", h.get_product_string())
             #Logger.log("i", "Serial No: %s", h.get_serial_number_string())
 
-            self._last_camera_update_at = QTime()
+            self._last_camera_update_at = QElapsedTimer()
             self._last_camera_update_at.start()
             self._fast_view = False
             while self._running:
@@ -622,7 +622,7 @@ class RawMouse(Extension, QObject,):
         Logger.log("d", "Reading events from libspnav...")
         try:
             if spnavOpen() == False:
-                self._last_camera_update_at = QTime()
+                self._last_camera_update_at = QElapsedTimer()
                 self._last_camera_update_at.start()
                 self._fast_view = False
                 while self._running:
