@@ -178,5 +178,7 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 
 1.2.0 - centreobj now uses the centre of the combined bounding box of all objects if none are selected + add support for Python 3.10.
 
+1.2.1 - Cura 5 compatibility tweaks.
+
 ---
 
