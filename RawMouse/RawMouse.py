@@ -385,7 +385,7 @@ class RawMouse(Extension, QObject,):
                         camera.lookAt(bb.center)
                     if isinstance(self._button_work["centerobj"], float):
                         # simple fit object to screen based on object's longest dimension
-                        target_size = max(bb.height, bb.width, bb.depth)
+                        target_size = max(bb.height, bb.width, bb.depth, 40)
                         if camera.isPerspective():
                             #Logger.log("d", "target at " + str(bb.center) + ", camera at " + str(camera.getWorldPosition()))
                             move_vector = (camera.getWorldPosition() - bb.center).normalized() * target_size * 2 / self._button_work["centerobj"]
