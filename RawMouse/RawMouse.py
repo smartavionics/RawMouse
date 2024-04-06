@@ -49,6 +49,7 @@ class RawMouse(Extension, QObject,):
 
         self._decoders = {
             "spacemouse": self._decodeSpacemouseEvent,
+            "os3m":       self._decodeOS3MEvent,
             "tiltpad":    self._decodeTiltpadEvent
         }
 
@@ -507,6 +508,18 @@ class RawMouse(Extension, QObject,):
                     self._button_work[button_defs[b]["target"]] = button_defs[b]["value"]
                     self.processButtons.emit()
                     return
+
+    def _decodeOS3MEvent(self, buf):
+        scale = 1.0 / 350.0
+        if len(buf) == 12:
+            for a in range(0, 6):
+                val = buf[2 * a] | buf[2 * a + 1] << 8
+                if val & 0x8000:
+                    val = val - 0x10000
+                self._axis_value[a] = val * scale * self._axis_scale[a] + self._axis_offset[a]
+            self._spacemouseAxisEvent(self._axis_value)
+        else:
+            Logger.log("d", "Unknown OS3M event: len = %d", len(buf))
 
     def _decodeTiltpadEvent(self, buf):
         scale = self._getScalingDueToZoom()
