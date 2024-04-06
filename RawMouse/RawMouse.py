@@ -476,7 +476,7 @@ class RawMouse(Extension, QObject,):
             for b in range(0, 16):
                 mask = 1 << b
                 if ((buttons & mask) != (self._buttons & mask)):
-                    self._spacemouseButtonEvent(b + 1, (buttons & mask) >> b)
+                    self._mouseButtonEvent(b + 1, (buttons & mask) >> b)
             self._buttons = buttons
         elif len(buf) >= 3 and buf[0] == 0x17:
             if buf[1] != self._battery_level:
@@ -502,7 +502,7 @@ class RawMouse(Extension, QObject,):
                 self._redraw_pending = True
                 self.processAxes.emit()
 
-    def _spacemouseButtonEvent(self, button, val):
+    def _mouseButtonEvent(self, button, val):
         if self._verbose > 0:
             Logger.log("d", "button[%d] = %f", button, val)
         if val == 1:
@@ -669,7 +669,7 @@ class RawMouse(Extension, QObject,):
                                         event.motion.rz * scale * self._axis_scale[5] + self._axis_offset[5]
                                     ])
                                 elif event.type == SPNAV_EVENT_BUTTON:
-                                    self._spacemouseButtonEvent(event.button.bnum, event.button.press)
+                                    self._mouseButtonEvent(event.button.bnum, event.button.press)
                     else:
                         self._getComponents()
                         time.sleep(0.1)
