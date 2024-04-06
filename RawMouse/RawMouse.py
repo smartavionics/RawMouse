@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 burtoogle.
+# Copyright (c) 2020-2024 burtoogle.
 # RawMouse is released under the terms of the AGPLv3 or higher.
 
 import json
@@ -190,7 +190,7 @@ class RawMouse(Extension, QObject,):
                                 if "interface_number" in options and hid_dev["interface_number"] != options["interface_number"]:
                                     continue
                             self._hid_dev = hid_dev
-                            Logger.log("d", "Found HID device with vendor_id = %x, product_id = %x, interface_number = %x", self._hid_dev["vendor_id"], self._hid_dev["product_id"], self._hid_dev["interface_number"])
+                            Logger.log("d", "Found HID device with vendor_id = %x, product_id = %x, usage_page = %x, usage = %x, interface_number = %x", self._hid_dev["vendor_id"], self._hid_dev["product_id"], self._hid_dev["usage_page"], self._hid_dev["usage"], self._hid_dev["interface_number"])
                             self._cacheProfileValues(known_dev[2])
                             break
                     if self._hid_dev:
