@@ -534,7 +534,11 @@ class RawMouse(Extension, QObject,):
                     return
 
     def _decodeUnknownEvent(self, buf):
-        Logger.log("d", "Unknown event: len = %d [0] = %x", len(buf), buf[0])
+        s = "[" + str(buf[0])
+        for i in range(1, len(buf)):
+            s += ", " + str(buf[i])
+        s += "]"
+        Logger.log("d", s)
 
     def _getScalingDueToZoom(self):
         scale = 1.0
