@@ -425,7 +425,7 @@ class RawMouse(Extension, QObject,):
             current_view = self._controller.getActiveView()
             if self._last_camera_update_at.elapsed() > self._min_camera_update_period:
                 if self._auto_fast_view or ctrl_is_active:
-                    if self._controller.getActiveStage().getPluginId() == "PreviewStage" and self._controller.getActiveView().getPluginId() != "FastView":
+                    if self._controller.getActiveStage().getPluginId() == "PreviewStage" and self._controller.getActiveView().getPluginId() == "SimulationView":
                         self._controller.setActiveView("FastView")
                         self._fast_view = True
                 elif self._fast_view:
