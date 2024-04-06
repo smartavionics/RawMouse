@@ -463,14 +463,14 @@ class RawMouse(Extension, QObject,):
                     val = val - 0x10000
                 axis = (buf[0] - 1) * 3 + a
                 self._axis_value[axis] = val * scale * self._axis_scale[axis] + self._axis_offset[axis]
-            self._spacemouseAxisEvent(self._axis_value)
+            self._mouseAxisEvent(self._axis_value)
         elif len(buf) == 13 and buf[0] == 1:
             for a in range(0, 6):
                 val = buf[2 * a + 1] | buf[2 * a + 2] << 8
                 if val & 0x8000:
                     val = val - 0x10000
                 self._axis_value[a] = val * scale * self._axis_scale[a] + self._axis_offset[a]
-            self._spacemouseAxisEvent(self._axis_value)
+            self._mouseAxisEvent(self._axis_value)
         elif len(buf) >= 3 and buf[0] == 3:
             buttons = buf[1] | buf[2] << 8
             for b in range(0, 16):
@@ -485,7 +485,7 @@ class RawMouse(Extension, QObject,):
         else:
             Logger.log("d", "Unknown spacemouse event: code = %x, len = %d", buf[0], len(buf))
 
-    def _spacemouseAxisEvent(self, vals):
+    def _mouseAxisEvent(self, vals):
         if self._verbose > 0:
             Logger.log("d", "Axes [%f,%f,%f,%f,%f,%f]", vals[0], vals[1], vals[2], vals[3], vals[4], vals[5])
         process = False
@@ -522,7 +522,7 @@ class RawMouse(Extension, QObject,):
                 if val & 0x8000:
                     val = val - 0x10000
                 self._axis_value[a] = val * scale * self._axis_scale[a] + self._axis_offset[a]
-            self._spacemouseAxisEvent(self._axis_value)
+            self._mouseAxisEvent(self._axis_value)
         else:
             Logger.log("d", "Unknown OS3M event: len = %d", len(buf))
 
@@ -660,7 +660,7 @@ class RawMouse(Extension, QObject,):
                                             self._controller.setActiveView("SimulationView")
                                             self._fast_view = False
                                     scale = 1 / 500.0
-                                    self._spacemouseAxisEvent([
+                                    self._mouseAxisEvent([
                                         event.motion.x * scale * self._axis_scale[0] + self._axis_offset[0],
                                         event.motion.y * scale * self._axis_scale[1] + self._axis_offset[1],
                                         event.motion.z * scale * self._axis_scale[2] + self._axis_offset[2],
