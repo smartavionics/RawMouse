@@ -502,12 +502,13 @@ class RawMouse(Extension, QObject,):
         if self._verbose > 0:
             Logger.log("d", "button[%d] = %f", button, val)
         if val == 1:
-            button_defs = self._profile["buttons"]
-            for b in button_defs:
-                if button == int(b):
-                    self._button_work[button_defs[b]["target"]] = button_defs[b]["value"]
-                    self.processButtons.emit()
-                    return
+            if "buttons" in self._profile:
+                button_defs = self._profile["buttons"]
+                for b in button_defs:
+                    if button == int(b):
+                        self._button_work[button_defs[b]["target"]] = button_defs[b]["value"]
+                        self.processButtons.emit()
+                        return
 
     def _decodeOS3MEvent(self, buf):
         scale = 1.0 / 350.0
@@ -539,12 +540,13 @@ class RawMouse(Extension, QObject,):
                 self.processAxes.emit()
         buttons = buf[3] & 0x7f
         if buttons != 0:
-            button_defs = self._profile["buttons"]
-            for b in button_defs:
-                if buttons == int(b, base = 16):
-                    self._button_work[button_defs[b]["target"]] = button_defs[b]["value"]
-                    self.processButtons.emit()
-                    return
+            if "buttons" in self._profile:
+                button_defs = self._profile["buttons"]
+                for b in button_defs:
+                    if buttons == int(b, base = 16):
+                        self._button_work[button_defs[b]["target"]] = button_defs[b]["value"]
+                        self.processButtons.emit()
+                        return
 
     def _decodeUnknownEvent(self, buf):
         s = "[" + str(buf[0])
@@ -575,10 +577,11 @@ class RawMouse(Extension, QObject,):
                 message += "\nAxes:"
                 for i in range(0, len(self._axis_scale)):
                     message += "\n&nbsp;[" + str(i) + "] scale " + str(self._axis_scale[i]) + " threshold " + str(self._axis_threshold[i]) + " offset " + str(self._axis_offset[i]) + " -> " + self._axis_target[i]
-                message += "\nButttons:"
-                button_defs = self._profile["buttons"]
-                for b in sorted(button_defs):
-                    message += "\n&nbsp;[" + b + "] target " + button_defs[b]["target"] + " value " + str(button_defs[b]["value"])
+                if "buttons" in self._profile:
+                    message += "\nButttons:"
+                    button_defs = self._profile["buttons"]
+                    for b in sorted(button_defs):
+                        message += "\n&nbsp;[" + b + "] target " + button_defs[b]["target"] + " value " + str(button_defs[b]["value"])
             message += "\nModifiers:\n " + ("Cmd" if sys.platform == "darwin" else "Ctrl") + " = switch from preview to fastview\n Shift-movy = move max layer slider\n Alt-movy = move min layer slider"
             self._showMessage(message)
         except Exception as e:
