@@ -153,6 +153,10 @@ class RawMouse(Extension, QObject,):
             self._axis_target.append(target)
             self._axis_value.append(0.0)
             Logger.log("d", "axis %d, scale = %f, threshold = %f, offset = %f, target = %s", i, self._axis_scale[i], self._axis_threshold[i], self._axis_offset[i], self._axis_target[i])
+        # ensure at least 6 axes are defined
+        while len(self._axis_value) < 6:
+            self._axis_target.append("")
+            self._axis_value.append(0.0)
 
     def _start(self):
         self._hid_dev = None
