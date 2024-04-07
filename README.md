@@ -3,9 +3,9 @@
 
 ---
 
-RawMouse is a Cura plugin that provides raw (driverless) access to HID mice such as the 3Dconnexion spacemouse.
+RawMouse is a Cura plugin that provides raw (driverless) access to HID mice such as the 3Dconnexion spacemouse and the OS3M mouse.
 
-Primarily intended for use on Linux (tested on Ubuntu 16.04.6), it does also work on Windows (tested on Windows 10) and MacOS (tested on MacOS 10.13).
+Primarily intended for use on Linux (tested on Ubuntu 16.04.6 and 20.04.6), it does also work on Windows (tested on Windows 10) and MacOS (tested on MacOS 10.13).
 
 The plugin includes binary components (cython-hidapi) that are required to access USB devices.
 
@@ -15,7 +15,7 @@ On Linux and MacOS, as an alternative to accessing HID devices, RawMouse can use
 
 ### Limitations
 
-This plugin can only be used with devices whose HID message protocol it knows about. At this time, the only supported devices are a bunch of 3Dconnexion Spacemice products
+This plugin can only be used with devices whose HID message protocol it knows about. At this time, the only supported devices are a bunch of 3Dconnexion Spacemice products, the open source OS3M mouse
 and a Gravis Tiltpad (which I don't seriously expect anyone to try and use with Cura). If you have some other device that you would like to use and have a description of the
 HID messages it uses then it can be added.
 
