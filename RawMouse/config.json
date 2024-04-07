@@ -34,6 +34,7 @@
     [ "0x047d", "0x4008", "tiltpad", "Kensington Gravis Destroyer TiltPad" ]
   ],
   "profiles" : {
+
     "spacemouse" : {
       "axes" : [
         { "offset": 0.0, "scale": -0.1, "threshold": 0.01, "target": "movx" },
@@ -54,16 +55,18 @@
         "8": { "value": [ "3d" ], "target": "resetview" }
       }
     },
+
     "os3m" : {
       "axes" : [
-        { "offset": 0.0, "scale": -0.1, "threshold": 0.01, "target": "movx" },
-        { "offset": 0.0, "scale": -100.0, "threshold": 1.0, "target": "zoom" },
-        { "offset": 0.0, "scale": -0.1, "threshold": 0.01, "target": "movy" },
-        { "offset": 0.0, "scale": -0.05 , "threshold": 0.01, "target": "rotpitch" },
-        { "offset": 0.0, "scale": -0.05, "threshold": 0.01, "target": "rotroll" },
-        { "offset": 0.0, "scale":  0.1, "threshold": 0.01, "target": "rotyaw" }
+        { "offset": 0.0, "scale": -0.0015, "threshold": 0.080, "target": "movx" },
+        { "offset": 0.0, "scale": -1.8,    "threshold": 94.0,  "target": "zoom" },
+        { "offset": 0.0, "scale":  0.0015, "threshold": 0.080, "target": "movy" },
+        { "offset": 0.0, "scale": -0.0004, "threshold": 0.023, "target": "rotpitch" },
+        { "offset": 0.0, "scale": -0.0004, "threshold": 0.022, "target": "rotroll" },
+        { "offset": 0.0, "scale":  0.0005, "threshold": 0.023, "target": "rotyaw" }
       ]
     },
+
     "libspnav" : {
       "axes" : [
         { "offset": 0.0, "scale": 0.1, "threshold": 0.01, "target": "movx" },
@@ -78,6 +81,7 @@
         "1": { "value": 1,        "target": "toggleview" }
       }
     },
+
     "tiltpad" : {
       "axes" : [
         { "offset": 0.0, "scale": -0.003, "threshold": 0.05, "target": "movx" },
