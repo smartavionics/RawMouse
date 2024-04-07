@@ -61,6 +61,7 @@ class RawMouse(Extension, QObject,):
         self._main_window = None
         self._scene = None
         self._camera_tool = None
+        self._lastPreviewStageView = "SimulationView"
 
         self.setMenuName(catalog.i18nc("@item:inmenu", "RawMouse"))
         self.addMenuItem(catalog.i18nc("@item:inmenu", "Stop"), self._stop)
@@ -323,12 +324,13 @@ class RawMouse(Extension, QObject,):
                 self._roll = 0
                 self._controller.setCameraRotation(*self._button_work["resetview"])
             elif self._button_work["toggleview"]:
-                if self._controller.getActiveView().getPluginId() == "SimulationView":
+                if self._controller.getActiveStage().getPluginId() == "PreviewStage":
+                    self._lastPreviewStageView = self._controller.getActiveView().getPluginId()
                     self._controller.setActiveStage("PrepareStage")
                     self._controller.setActiveView("SolidView")
                 else:
                     self._controller.setActiveStage("PreviewStage")
-                    self._controller.setActiveView("SimulationView")
+                    self._controller.setActiveView(self._lastPreviewStageView)
             elif self._button_work["maxlayer"]:
                 if current_view.getPluginId() == "SimulationView":
                     layer = self._button_work["maxlayer"]
