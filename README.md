@@ -180,5 +180,7 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 
 1.2.1 - Cura 5 compatibility tweaks.
 
+1.2.2 - added support for OS3M mouse (requested by https://github.com/hotsgit who helped with the testing) + minor fixes.
+
 ---
 
