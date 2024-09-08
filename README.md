@@ -182,5 +182,7 @@ RawMouse uses [cython-hidapi](https://github.com/trezor/cython-hidapi) to access
 
 1.2.2 - added support for OS3M mouse (requested by https://github.com/hotsgit who helped with the testing) + minor fixes.
 
+1.2.3 - added a couple of new USB IDs for SpaceMouse Wireless BT Edition (contributed by Gentoli <gentoli@live.com>).
+
 ---
 
