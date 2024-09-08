@@ -22,6 +22,8 @@
     [ "0x256f", "0xc632", "spacemouse", "3Dconnexion Space Mouse Pro Wireless" ],
     [ "0x256f", "0xc633", "spacemouse", "3Dconnexion Space Mouse Enterprise" ],
     [ "0x256f", "0xc635", "spacemouse", "3Dconnexion Space Mouse Compact" ],
+    [ "0x256f", "0xc638", "spacemouse", "3Dconnexion Space Mouse Pro Wireless BT" ],
+    [ "0x256f", "0xc63a", "spacemouse", "3Dconnexion Space Mouse Wireless BT" ],
     [ "0x256f", "0xc652", "spacemouse", "3Dconnexion Space Mouse Universal Receiver",
       { "platform": "Linux" } ],
     [ "0x256f", "0xc652", "spacemouse", "3Dconnexion Space Mouse Universal Receiver",
